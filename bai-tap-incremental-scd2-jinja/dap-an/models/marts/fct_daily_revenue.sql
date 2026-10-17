@@ -1,4 +1,5 @@
--- I5 — delete+insert theo ngày: tính lại TOÀN BỘ các ngày bị ảnh hưởng. I9: backfill theo vars.
+-- I5 — delete+insert theo ngày: tính lại TOÀN BỘ các ngày bị ảnh hưởng.
+-- I9/P4: backfill theo khoảng ngày bằng vars. P3/P6: quy tắc doanh thu lấy từ int_orders.
 {{ config(
     materialized='incremental',
     incremental_strategy='delete+insert',
@@ -6,7 +7,7 @@
 ) }}
 
 with orders as (
-    select * from {{ ref('stg_orders') }}
+    select * from {{ ref('int_orders') }}
 ),
 
 {% if is_incremental() %}
@@ -24,9 +25,9 @@ affected_dates as (
 final as (
     select
         order_date,
-        sum(case when order_status <> 'cancelled' then 1 else 0 end)          as order_count,
-        coalesce(sum(case when order_status <> 'cancelled' then amount end), 0) as revenue,
-        max(_loaded_at)                                                        as max_loaded_at
+        sum(case when is_revenue_order then 1 else 0 end)               as order_count,
+        coalesce(sum(case when is_revenue_order then amount end), 0)    as revenue,
+        max(_loaded_at)                                                 as max_loaded_at
     from orders
     {% if is_incremental() %}
     where order_date in (select order_date from affected_dates)

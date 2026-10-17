@@ -1,16 +1,16 @@
-# 01 — Jinja (J1–J10)
+# 02 — Jinja (J1–J10)
 
 > Lý thuyết: [GD1-ly-thuyet/tuan-1/03-jinja-va-macro.md](../../GD1-ly-thuyet/tuan-1/03-jinja-va-macro.md)
 >
 > Thói quen bắt buộc: sau mỗi thay đổi, chạy `dbt compile -s <model>` và mở file trong `target/compiled/lab/...` để xem SQL thật. Jinja sai thường vẫn compile được, nhưng ra SQL lạ.
 
-Làm J1–J6 ở **ngày 0** là được. J7, J9, J10 gắn với bài incremental/SCD2.
+Làm sau [01-co-ban.md](01-co-ban.md): J1–J2 refactor chính staging bạn đã viết ở B3/B4. J1–J6 làm ở **ngày 0** là được. J7, J9, J10 gắn với bài incremental/SCD2.
 
 ---
 
-## J1 ⭐⭐ Macro `cents_to_dollars`
+## J1 ⭐ Macro `cents_to_dollars`
 
-**Bối cảnh:** staging đang lặp `round(x / 100.0, 2)` ở 3 model.
+**Bối cảnh:** staging bạn viết ở B3/B4 đang lặp cùng một phép đổi cents → dollars ở 3 model. Ngoài thực tế, mỗi người viết một kiểu (`/100`, `/100.0`, `round` hoặc không) là nguồn gốc của các con số lệch nhau vài cent giữa các báo cáo.
 
 **Yêu cầu**
 - Tạo `macros/cents_to_dollars.sql` chứa macro `cents_to_dollars(column_name, scale=2)`.
@@ -227,7 +227,7 @@ dbt run-operation audit_incremental_models
 
 ## J10 ⭐⭐⭐⭐ Macro `scd2_from_changelog` → làm ở bài S8
 
-Macro sinh **cả một model SCD2** từ bảng CDC log. Đề chi tiết ở [03-snapshot-scd2.md — S8](03-snapshot-scd2.md#s8-scd2-từ-cdc-log).
+Macro sinh **cả một model SCD2** từ bảng CDC log. Đề chi tiết ở [04-snapshot-scd2.md — S8](04-snapshot-scd2.md#s8-scd2-từ-cdc-log).
 
 ---
 

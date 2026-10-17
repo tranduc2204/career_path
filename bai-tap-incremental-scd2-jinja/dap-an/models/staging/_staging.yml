@@ -1,0 +1,33 @@
+models:
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+
+  - name: stg_products
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+
+  - name: stg_orders
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]          # P1: test này đỏ ngày 6 nếu staging chưa chống trùng
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: "{{ var('order_statuses') }}"
+      - name: customer_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+              config:
+                severity: warn                  # B5: ngày 2 có đơn của khách 11 chưa tồn tại (late-arriving dimension)
+
+  - name: stg_events
+    columns:
+      - name: event_id
+        data_tests: [not_null]                  # P5: đỏ ngày 10 nếu chưa lọc event_id NULL

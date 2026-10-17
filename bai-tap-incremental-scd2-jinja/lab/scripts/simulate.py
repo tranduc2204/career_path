@@ -3,12 +3,14 @@
 
 Chạy từ thư mục lab/:
   python scripts/simulate.py reset     # XOÁ toàn bộ lab.duckdb (cả model/snapshot), nạp dữ liệu ngày 0
-  python scripts/simulate.py next      # áp dụng thay đổi của ngày kế tiếp (1 → 5)
+  python scripts/simulate.py next      # áp dụng thay đổi của ngày kế tiếp (1 → 11)
   python scripts/simulate.py status    # đang ở ngày nào, đã xảy ra những gì
+  python scripts/simulate.py status --reveal   # hiện cả chi tiết các sự cố (ngày 6–11) — chỉ xem khi bí
   python scripts/simulate.py goto N    # reset rồi nhảy thẳng tới ngày N
                                        # (cảnh báo: snapshot sẽ không thấy các ngày ở giữa)
 
-Kịch bản đầy đủ của từng ngày: xem bai-tap/00-setup.md.
+Ngày 0–5: giai đoạn xây dựng (kịch bản công khai trong bai-tap/00-setup.md).
+Ngày 6–11: hệ thống đã ổn định thì gặp sự cố production (chi tiết bị giấu, xem bai-tap/05-su-co-thuc-te.md).
 """
 import random
 import sys
@@ -19,7 +21,8 @@ import duckdb
 
 LAB_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = LAB_DIR / "lab.duckdb"
-MAX_DAY = 5
+MAX_DAY = 11
+STABLE_DAY = 5   # từ sau ngày này là giai đoạn sự cố
 FIRST_LOAD = datetime(2026, 1, 1, 6, 0)
 
 
@@ -65,7 +68,7 @@ create table raw.events (
     event_id varchar, user_id int, event_type varchar, event_ts timestamp, _loaded_at timestamp
 );
 create table raw._lab_state (current_day int, changed_at timestamp);
-create table raw._lab_log (day int, seq int, message varchar);
+create table raw._lab_log (day int, seq int, message varchar, hidden boolean);
 """
 
 CUSTOMERS = [
@@ -104,9 +107,10 @@ class Sim:
         self.rng = random.Random(1000 + day)
         self.seq = 0
 
-    def log(self, msg):
+    def log(self, msg, hidden=False):
+        """hidden=True: chi tiết sự cố, chỉ hiện khi `status --reveal`."""
         self.seq += 1
-        self.con.execute("insert into raw._lab_log values (?, ?, ?)", [self.day, self.seq, msg])
+        self.con.execute("insert into raw._lab_log values (?, ?, ?, ?)", [self.day, self.seq, msg, hidden])
 
     # ---- customers
     def insert_customer(self, cid, name, email, city, tier, updated_at):
@@ -163,9 +167,15 @@ class Sim:
     def product_prices(self):
         return dict(self.con.execute("select product_id, list_price_cents from raw.products").fetchall())
 
+    def order_columns(self):
+        return [r[0] for r in self.con.execute("describe raw.orders").fetchall()]
+
     def has_channel(self):
-        cols = [r[0] for r in self.con.execute("describe raw.orders").fetchall()]
-        return "channel" in cols
+        return "channel" in self.order_columns()
+
+    def status_col(self):
+        """Ngày 7 nguồn đổi tên status → order_status."""
+        return "order_status" if "order_status" in self.order_columns() else "status"
 
     # ---- orders
     def new_orders(self, order_date, n, status, updated_at_hour=None, customer_ids=None, fixed_updated_at=None):
@@ -191,16 +201,15 @@ class Sim:
                     [oid, line_no, pid, qty, price, lt],
                 )
             upd = fixed_updated_at or at(order_date, updated_at_hour or rng.randint(8, 21), rng.randint(0, 59))
+            cols = ["order_id", "customer_id", "order_date", self.status_col(), "amount_cents", "updated_at", "_loaded_at"]
+            vals = [oid, cid, order_date, status, total, upd, lt]
             if channel_col:
-                con.execute(
-                    "insert into raw.orders values (?, ?, ?, ?, ?, ?, ?, ?)",
-                    [oid, cid, order_date, status, total, upd, lt, rng.choice(["web", "app"])],
-                )
-            else:
-                con.execute(
-                    "insert into raw.orders values (?, ?, ?, ?, ?, ?, ?)",
-                    [oid, cid, order_date, status, total, upd, lt],
-                )
+                cols.append("channel")
+                vals.append(rng.choice(["web", "app"]))
+            con.execute(
+                f"insert into raw.orders ({', '.join(cols)}) values ({', '.join('?' for _ in vals)})",
+                vals,
+            )
             ids.append(oid)
         return ids
 
@@ -208,14 +217,15 @@ class Sim:
         """Đơn 'placed' từ hôm trước → 'shipped'; 'shipped' đủ 3 ngày → 'delivered'."""
         bd = business_date(self.day)
         lt = load_ts(self.day)
+        st = self.status_col()
         n1 = self.con.execute(
-            """update raw.orders set status = 'shipped', updated_at = ?, _loaded_at = ?
-               where status = 'placed' and order_date <= ?""",
+            f"""update raw.orders set {st} = 'shipped', updated_at = ?, _loaded_at = ?
+               where {st} = 'placed' and order_date <= ?""",
             [at(bd, 16), lt, bd - timedelta(days=1)],
         ).fetchone()[0]
         n2 = self.con.execute(
-            """update raw.orders set status = 'delivered', updated_at = ?, _loaded_at = ?
-               where status = 'shipped' and order_date <= ?""",
+            f"""update raw.orders set {st} = 'delivered', updated_at = ?, _loaded_at = ?
+               where {st} = 'shipped' and order_date <= ?""",
             [at(bd, 17), lt, bd - timedelta(days=3)],
         ).fetchone()[0]
         self.log(f"Cập nhật trạng thái: {n1} đơn placed→shipped, {n2} đơn shipped→delivered (updated_at và _loaded_at đều đổi)")
@@ -346,7 +356,94 @@ def day_5(s: Sim):
     s.log("30 sự kiện mới + GỬI LẠI 4 sự kiện ev_04_010..013")
 
 
-DAYS = [day_0, day_1, day_2, day_3, day_4, day_5]
+# --------------------------------------------------------------------------- sự cố (ngày 6–11)
+# Mỗi ngày vẫn có vận hành bình thường (trạng thái, đơn mới, sự kiện mới) + 1 sự cố.
+# Chi tiết sự cố ghi với hidden=True: người học phải tự phát hiện qua dbt build / test / check.
+
+def normal_day(s: Sim, n_orders=6):
+    bd = business_date(s.day)
+    s.progress_statuses()
+    ids = s.new_orders(bd, n_orders, "placed")
+    s.new_events(bd, 30, f"ev_{s.day:02d}_")
+    s.log(f"{n_orders} đơn mới ngày {bd}, 30 sự kiện mới")
+    return ids
+
+
+def day_6(s: Sim):
+    ids = normal_day(s)
+    dup = ids[:4]
+    s.con.execute(
+        f"insert into raw.orders select * from raw.orders where order_id in ({', '.join(map(str, dup))})"
+    )
+    s.log(f"SỰ CỐ P1 — công cụ ingest retry giữa chừng: 4 đơn {dup} bị nạp 2 lần (2 dòng giống hệt nhau, "
+          f"cùng _loaded_at). raw.orders không còn duy nhất theo order_id.", hidden=True)
+
+
+def day_7(s: Sim):
+    # DuckDB: ALTER phải đứng trước mọi UPDATE trên cùng bảng trong 1 transaction
+    s.con.execute("alter table raw.orders rename column status to order_status")
+    s.log("SỰ CỐ P2 — team backend đổi tên cột raw.orders.status → order_status, không báo trước. "
+          "Mọi model đọc cột status sẽ lỗi.", hidden=True)
+    normal_day(s)
+
+
+def day_8(s: Sim):
+    normal_day(s)
+    returned = [r[0] for r in s.con.execute(
+        "select distinct order_id from raw.orders where order_date = ? and order_status = 'delivered' "
+        "order by order_id limit 3",
+        [date(2025, 12, 29)],
+    ).fetchall()]
+    s.con.execute(
+        f"update raw.orders set order_status = 'returned', updated_at = ?, _loaded_at = ? "
+        f"where order_id in ({', '.join(map(str, returned))})",
+        [at(business_date(8), 10), load_ts(8)],
+    )
+    s.log(f"SỰ CỐ P3 — tính năng trả hàng lên production: 3 đơn {returned} (ngày 2025-12-29) chuyển sang "
+          f"trạng thái MỚI 'returned'. Quy định của phòng tài chính: đơn returned KHÔNG tính doanh thu.", hidden=True)
+
+
+def day_9(s: Sim):
+    normal_day(s)
+    n = s.con.execute(
+        "update raw.orders set amount_cents = amount_cents + 500 where order_date = ?",
+        [date(2025, 12, 27)],
+    ).fetchone()[0]
+    s.log(f"SỰ CỐ P4 — team backend phát hiện thiếu phí ship $5 cho các đơn ngày 2025-12-27 và chạy UPDATE "
+          f"thẳng vào database ({n} dòng). updated_at và _loaded_at KHÔNG đổi → mọi watermark đều không thấy.",
+          hidden=True)
+
+
+def day_10(s: Sim):
+    normal_day(s)
+    lt = load_ts(10)
+    s.con.executemany(
+        "insert into raw.events values (null, ?, 'page_view', ?, ?)",
+        [[s.rng.randint(1, 11), at(business_date(10), 9) + timedelta(minutes=7 * i), lt] for i in range(5)],
+    )
+    s.new_events(business_date(2), 8, "ev_10_M")
+    s.log("SỰ CỐ P5 — bản app mobile mới: (a) 5 sự kiện có event_id = NULL do lỗi tracking; "
+          "(b) 8 sự kiện ev_10_M000..007 bị kẹt trên máy người dùng offline, giờ mới gửi về với event_ts ngày "
+          f"{business_date(2)} (trễ 8 ngày, vượt lookback 3 ngày).", hidden=True)
+
+
+def day_11(s: Sim):
+    s.con.execute("alter table raw.orders add column _is_deleted boolean")
+    normal_day(s)
+    test_orders = [r[0] for r in s.con.execute(
+        "select distinct order_id from raw.orders where order_date = ? order by order_id limit 2",
+        [business_date(10)],
+    ).fetchall()]
+    s.con.execute(
+        f"update raw.orders set _is_deleted = true, _loaded_at = ? where order_id in ({', '.join(map(str, test_orders))})",
+        [load_ts(11)],
+    )
+    s.log(f"SỰ CỐ P6 — nguồn chuyển sang SOFT DELETE: thêm cột _is_deleted. 2 đơn {test_orders} là đơn test của QA "
+          f"tạo trên production, giờ được đánh dấu _is_deleted = true (dòng vẫn còn). Phải loại khỏi doanh thu và "
+          f"đánh dấu trong fct_orders.", hidden=True)
+
+
+DAYS = [day_0, day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10, day_11]
 
 
 # --------------------------------------------------------------------------- CLI
@@ -374,8 +471,15 @@ def apply_day(con, day):
     con.execute("insert into raw._lab_state values (?, ?)", [day, datetime.now()])
     con.execute("commit")
     print(f"=== Đã chuyển sang NGÀY {day} (_loaded_at = {load_ts(day)}) ===")
-    for (msg,) in con.execute("select message from raw._lab_log where day = ? order by seq", [day]).fetchall():
-        print(f"  • {msg}")
+    rows = con.execute("select message, hidden from raw._lab_log where day = ? order by seq", [day]).fetchall()
+    for msg, hidden in rows:
+        if not hidden:
+            print(f"  • {msg}")
+    if any(h for _, h in rows):
+        print("  🚨 Có chuyện bất thường xảy ra ở nguồn hôm nay. Hãy build, đọc lỗi/test, điều tra.")
+        print("     (Bí quá: python scripts/simulate.py status --reveal)")
+    if day == STABLE_DAY:
+        print(f"\n✅ Hết giai đoạn xây dựng. Từ ngày {STABLE_DAY + 1} là giai đoạn sự cố — xem bai-tap/05-su-co-thuc-te.md")
 
 
 def wipe_database():
@@ -420,9 +524,15 @@ def main():
             if day is None:
                 print("Chưa có dữ liệu. Chạy: python scripts/simulate.py reset")
                 return
+            reveal = "--reveal" in sys.argv
             print(f"Đang ở NGÀY {day}/{MAX_DAY}. Các sự kiện đã xảy ra:")
-            for d, msg in con.execute("select day, message from raw._lab_log order by day, seq").fetchall():
-                print(f"  [ngày {d}] {msg}")
+            for d, msg, hidden in con.execute(
+                "select day, message, hidden from raw._lab_log order by day, seq"
+            ).fetchall():
+                if hidden and not reveal:
+                    print(f"  [ngày {d}] 🚨 (sự cố bị ẩn — thêm --reveal để xem)")
+                else:
+                    print(f"  [ngày {d}] {msg}")
     finally:
         con.close()
 

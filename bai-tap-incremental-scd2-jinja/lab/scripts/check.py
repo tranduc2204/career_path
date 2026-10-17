@@ -7,6 +7,7 @@
 Kết quả:  ✅ PASS   ❌ FAIL   ⏭️  SKIP (chưa làm / chưa tới ngày cần thiết)
 Ground truth luôn tính trực tiếp từ schema raw, không phụ thuộc code của bạn.
 """
+import json
 import re
 import sys
 from collections import defaultdict
@@ -14,6 +15,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 import duckdb
+import yaml
 
 LAB_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = LAB_DIR / "lab.duckdb"
@@ -34,6 +36,10 @@ class Fail(Exception):
 
 con: duckdb.DuckDBPyConnection
 DAY: int
+O: str          # subquery "đơn hàng đúng" — xem orders_truth()
+
+# Quy tắc doanh thu (tích luỹ theo các sự cố): không tính đơn huỷ, đơn trả (P3), đơn test bị soft delete (P6)
+REVENUE = "status not in ('cancelled', 'returned') and not is_deleted"
 
 
 def q(sql, params=None):
@@ -112,6 +118,40 @@ def expect_counts(actual, expected, label, hint=""):
 
 # --------------------------------------------------------------------------- ground truth
 
+def orders_truth():
+    """raw.orders đã chuẩn hoá: 1 dòng/đơn (P1), tên cột trạng thái cũ/mới (P2), soft delete (P6)."""
+    cols = [r[0] for r in q("describe raw.orders")]
+    st = "order_status" if "order_status" in cols else "status"
+    deleted = "coalesce(_is_deleted, false)" if "_is_deleted" in cols else "false"
+    channel = "channel" if "channel" in cols else "cast(null as varchar)"
+    return f"""(select order_id, customer_id, order_date, {st} as status, amount_cents,
+                       {deleted} as is_deleted, {channel} as channel, updated_at, _loaded_at
+                from raw.orders
+                qualify row_number() over (partition by order_id order by _loaded_at desc) = 1)"""
+
+
+def manifest():
+    path = LAB_DIR / "target" / "manifest.json"
+    if not path.exists():
+        raise Skip("chưa có target/manifest.json (chạy dbt build trước)")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def has_test(man, test_name, model, column=None):
+    for node in man["nodes"].values():
+        if node.get("resource_type") != "test":
+            continue
+        meta = node.get("test_metadata") or {}
+        if meta.get("name") != test_name:
+            continue
+        if node.get("attached_node") != f"model.lab.{model}":
+            continue
+        if column and (node.get("column_name") or "").lower() != column:
+            continue
+        return True
+    return False
+
+
 def truth_customer_versions(tracked=("city", "tier")):
     """Phiên bản SCD2 'đúng' theo CDC log: chỉ tạo phiên bản khi cột theo dõi đổi."""
     rows = q(f"""select customer_id, op, {', '.join(tracked)}, changed_at
@@ -135,6 +175,153 @@ def truth_customer_versions(tracked=("city", "tier")):
 
 def active_customers():
     return {r[0] for r in q("select customer_id from raw.customers")}
+
+
+# --------------------------------------------------------------------------- Cơ bản
+
+RAW_TABLES = {"customers", "customer_changelog", "products", "orders", "order_items", "events"}
+
+
+def check_B2():
+    declared = set()
+    for path in (LAB_DIR / "models").rglob("*.yml"):
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        for src in doc.get("sources") or []:
+            if src.get("name") == "raw":
+                declared |= {t.get("name") for t in src.get("tables") or []}
+    if not declared:
+        raise Skip("chưa thấy source tên `raw` trong file .yml nào dưới models/")
+    missing = RAW_TABLES - declared
+    if missing:
+        raise Fail(f"source raw còn thiếu bảng: {sorted(missing)}")
+    if not code_matching(r"source\(\s*'raw'", "models"):
+        raise Fail("đã khai báo nhưng chưa model nào dùng {{ source('raw', ...) }}")
+    return f"source raw khai báo đủ {len(RAW_TABLES)} bảng"
+
+
+def is_view(rel):
+    schema, table = [p.strip('"') for p in rel.split(".")]
+    return q1("select table_type from information_schema.tables where table_schema = ? and table_name = ?",
+              [schema, table]) == "VIEW"
+
+
+def check_B3():
+    rel = find("stg_orders")
+    need_cols(rel, ["order_id", "customer_id", "order_date", "order_status", "amount", "updated_at", "_loaded_at"])
+    if not is_view(rel):
+        raise Fail("stg_orders nên là view (staging không lưu dữ liệu)")
+    missing = q1(f"select count(*) from (select order_id from {O} except select order_id from {rel})")
+    if missing:
+        raise Fail(f"thiếu {missing} đơn so với nguồn")
+    bad = q(f"""select o.order_id, s.order_status, o.status, s.amount, o.amount_cents
+                from {O} o join {rel} s using (order_id)
+                where s.order_status is distinct from o.status
+                   or abs(s.amount - o.amount_cents / 100.0) > 0.005
+                limit 3""")
+    if bad:
+        raise Fail(f"sai giá trị (order_id, status, status đúng, amount, amount_cents): {bad}")
+    return "view, đủ cột, status đã rename, amount = cents / 100"
+
+
+def check_B4():
+    expected = {
+        "stg_customers": ["customer_id", "full_name", "email", "city", "tier", "updated_at", "_loaded_at"],
+        "stg_customer_changelog": ["customer_id", "op", "full_name", "email", "city", "tier", "changed_at", "_loaded_at"],
+        "stg_products": ["product_id", "product_name", "category", "list_price", "_loaded_at"],
+        "stg_order_items": ["order_id", "line_no", "product_id", "quantity", "unit_price", "_loaded_at"],
+        "stg_events": ["event_id", "user_id", "event_type", "event_ts", "_loaded_at"],
+    }
+    rels = {}
+    missing_models = []
+    for model, cols in expected.items():
+        try:
+            rels[model] = find(model)
+        except Skip:
+            missing_models.append(model)
+            continue
+        need_cols(rels[model], cols)
+    if len(missing_models) == len(expected):
+        raise Skip("chưa có model staging nào ngoài stg_orders")
+    if missing_models:
+        raise Fail(f"còn thiếu: {missing_models}")
+    p = rels["stg_products"]
+    if q1(f"select count(*) from {p} where product_name <> trim(product_name)"):
+        raise Fail("stg_products.product_name còn khoảng trắng thừa")
+    if q1(f"select category from {p} where product_id = 8") is not None:
+        raise Fail("stg_products: category rỗng ('') của sản phẩm 8 phải thành null")
+    if q1(f"""select count(*) from {p} s join raw.products r using (product_id)
+              where abs(s.list_price - r.list_price_cents / 100.0) > 0.005"""):
+        raise Fail("stg_products.list_price chưa đổi cents → dollars")
+    email = q1(f"select email from {rels['stg_customers']} where customer_id = 2")
+    if email != email.strip().lower():
+        raise Fail(f"stg_customers: email khách 2 phải trim + lowercase, đang là {email!r}")
+    if q1(f"""select count(*) from {rels['stg_order_items']} s join raw.order_items r using (order_id, line_no)
+              where abs(s.unit_price - r.unit_price_cents / 100.0) > 0.005"""):
+        raise Fail("stg_order_items.unit_price chưa đổi cents → dollars")
+    return "5 model staging đủ cột, làm sạch chuỗi và đổi đơn vị đúng"
+
+
+def check_B5():
+    man = manifest()
+    want = [
+        ("unique", "stg_customers", "customer_id"),
+        ("not_null", "stg_customers", "customer_id"),
+        ("unique", "stg_products", "product_id"),
+        ("not_null", "stg_products", "product_id"),
+        ("accepted_values", "stg_orders", "order_status"),
+        ("relationships", "stg_orders", "customer_id"),
+    ]
+    missing = [w for w in want if not has_test(man, *w)]
+    if len(missing) == len(want):
+        raise Skip("chưa có test nào trên staging")
+    if missing:
+        raise Fail("còn thiếu test: " + ", ".join(f"{t} trên {m}.{c}" for t, m, c in missing))
+    return "đủ 6 test cơ bản (unique, not_null, accepted_values, relationships)"
+
+
+def check_B6():
+    lines = find("fct_order_lines")
+    need_cols(lines, ["order_id", "line_no", "order_date", "customer_id", "product_id", "quantity", "unit_price",
+                      "line_amount"])
+    if is_view(lines):
+        raise Fail("fct_order_lines phải materialized = table")
+    n_raw = q1("select count(*) from (select distinct order_id, line_no from raw.order_items)")
+    n = q1(f"select count(*) from {lines}")
+    if n != n_raw:
+        raise Fail(f"fct_order_lines có {n} dòng, nguồn có {n_raw} dòng đơn (join làm nhân/mất dòng?)")
+    total, want = q1(f"select sum(line_amount) from {lines}"), q1(
+        "select sum(quantity * unit_price_cents) / 100.0 from raw.order_items")
+    if abs(float(total) - float(want)) > 0.01:
+        raise Fail(f"tổng line_amount = {total}, cần {want:.2f}")
+    prods = find("dim_products")
+    need_cols(prods, ["product_id", "product_name", "category", "list_price"])
+    if q1(f"select count(*) from {prods}") != q1("select count(*) from raw.products"):
+        raise Fail("dim_products phải có đủ mọi sản phẩm")
+    return f"fct_order_lines {n} dòng, tổng tiền khớp; dim_products đủ sản phẩm"
+
+
+def check_B7():
+    rel = find("customer_lifetime")
+    need_cols(rel, ["customer_id", "order_count", "lifetime_value", "first_order_date", "last_order_date"])
+    truth = {r[0]: r[1:] for r in q(f"""select customer_id, count(*), sum(amount_cents) / 100.0,
+                                              min(order_date), max(order_date)
+                                       from {O} where {REVENUE} group by 1""")}
+    have = {r[0]: r[1:] for r in q(f"""select customer_id, order_count, lifetime_value,
+                                             first_order_date, last_order_date from {rel}""")}
+    errs = []
+    for cid, (n, ltv, first, last) in sorted(truth.items()):
+        h = have.get(cid)
+        if h is None:
+            errs.append(f"thiếu khách {cid}")
+        elif h[0] != n or abs(float(h[1]) - float(ltv)) > 0.01 or h[2] != first or h[3] != last:
+            errs.append(f"khách {cid}: có {tuple(h)}, cần ({n}, {float(ltv):.2f}, {first}, {last})")
+    extra = set(have) - set(truth)
+    if extra:
+        errs.append(f"thừa khách không có đơn tính doanh thu: {sorted(extra)}")
+    if errs:
+        raise Fail("; ".join(errs[:3]) + (" ..." if len(errs) > 3 else "")
+                   + ". Nhớ quy tắc doanh thu hiện hành (xem đề).")
+    return f"{len(truth)} khách, số đơn & giá trị vòng đời khớp quy tắc doanh thu"
 
 
 # --------------------------------------------------------------------------- Jinja
@@ -169,14 +356,14 @@ def check_J2():
 
 def _status_matrix():
     truth = defaultdict(dict)
-    for cid, st, n in q("select customer_id, status, count(*) from raw.orders group by 1, 2"):
+    for cid, st, n in q(f"select customer_id, status, count(*) from {O} group by 1, 2"):
         truth[cid][st] = n
     return truth
 
 
 def check_J3():
     rel = find("customer_order_summary")
-    statuses = ["placed", "shipped", "delivered", "cancelled"]
+    statuses = ["placed", "shipped", "delivered", "cancelled"] + (["returned"] if DAY >= 8 else [])
     need_cols(rel, ["customer_id", "total_orders"] + [f"orders_{s}" for s in statuses])
     truth = _status_matrix()
     for cid, *vals in q(f"select customer_id, {', '.join('orders_' + s for s in statuses)} from {rel}"):
@@ -188,7 +375,7 @@ def check_J3():
 
 def check_J4():
     rel = find("customer_order_summary_dynamic")
-    want = sorted(r[0] for r in q("select distinct status from raw.orders"))
+    want = sorted(r[0] for r in q(f"select distinct status from {O}"))
     have = sorted(c[len("orders_"):] for c in columns(rel) if c.startswith("orders_"))
     if have != want:
         raise Fail(f"cột trạng thái {have} ≠ trạng thái thật trong dữ liệu {want} (đã build lại sau khi sang ngày mới?)")
@@ -250,7 +437,8 @@ def check_I1():
     rel = find("fct_events_append")
     have, raw_total, raw_distinct = q1(f"select count(*) from {rel}"), q1("select count(*) from raw.events"), \
         q1("select count(distinct event_id) from raw.events")
-    if have != raw_total:
+    raw_non_null = q1("select count(*) from raw.events where event_id is not null")
+    if have not in (raw_total, raw_non_null):   # chấp nhận cả khi staging đã lọc event_id NULL (P5)
         raise Fail(f"có {have} dòng, nguồn có {raw_total} dòng (append phải giữ nguyên mọi dòng đã nạp)")
     dups = have - q1(f"select count(distinct event_id) from {rel}")
     return f"{have} dòng = số dòng nguồn; trong đó {dups} dòng TRÙNG event_id ({raw_distinct} sự kiện thật) → xem I2"
@@ -258,6 +446,9 @@ def check_I1():
 
 def check_I2():
     rel = find("fct_events")
+    nulls = q1(f"select count(*) from {rel} where event_id is null")
+    if nulls:
+        raise Fail(f"có {nulls} sự kiện event_id = NULL")
     dups = q1(f"select count(*) - count(distinct event_id) from {rel}")
     if dups:
         raise Fail(f"còn {dups} dòng trùng event_id")
@@ -272,21 +463,21 @@ def check_I3():
     dups = q1(f"select count(*) - count(distinct order_id) from {rel}")
     if dups:
         raise Fail(f"{dups} dòng trùng order_id (thiếu unique_key?)")
-    missing = [r[0] for r in q(f"select order_id from raw.orders except select order_id from {rel} order by 1")]
+    missing = [r[0] for r in q(f"select order_id from {O} except select order_id from {rel} order by 1")]
     if missing:
-        late = q("select order_id, order_date, updated_at, _loaded_at from raw.orders where order_id in "
+        late = q(f"select order_id, order_date, updated_at, _loaded_at from {O} where order_id in "
                  f"({', '.join(map(str, missing))}) order by 1")
         detail = "; ".join(f"{o} (order_date {d}, updated_at {u:%m-%d %H:%M}, _loaded_at {l:%m-%d %H:%M})"
                            for o, d, u, l in late)
         raise Fail(f"thiếu {len(missing)} đơn: {detail}. Watermark của bạn có bắt được đơn đến muộn?")
-    wrong = q(f"""select r.order_id, f.order_status, r.status from raw.orders r join {rel} f using (order_id)
-                  where f.order_status <> r.status order by 1 limit 5""")
+    wrong = q(f"""select r.order_id, f.order_status, r.status from {O} r join {rel} f using (order_id)
+                  where f.order_status is distinct from r.status order by 1 limit 5""")
     if wrong:
         raise Fail(f"trạng thái sai (order_id, đang có, đúng): {wrong}")
-    bad_amt = q1(f"""select count(*) from raw.orders r join {rel} f using (order_id)
-                     where abs(f.amount - r.amount_cents / 100.0) > 0.005""")
+    bad_amt = q(f"""select r.order_date, count(*) from {O} r join {rel} f using (order_id)
+                    where abs(f.amount - r.amount_cents / 100.0) > 0.005 group by 1 order by 1""")
     if bad_amt:
-        raise Fail(f"{bad_amt} đơn sai amount")
+        raise Fail(f"sai amount (ngày, số đơn): {bad_amt}. Nguồn có sửa số liệu cũ mà watermark không thấy?")
     return f"{q1(f'select count(*) from {rel}')} đơn, trạng thái & số tiền khớp nguồn"
 
 
@@ -294,10 +485,10 @@ def check_I5():
     rel = find("fct_daily_revenue")
     need_cols(rel, ["order_date", "order_count", "revenue"])
     truth = {d: (n, rev) for d, n, rev in q(
-        """select order_date,
-                  sum(case when status <> 'cancelled' then 1 else 0 end),
-                  coalesce(sum(case when status <> 'cancelled' then amount_cents end), 0) / 100.0
-           from raw.orders group by 1""")}
+        f"""select order_date,
+                   sum(case when {REVENUE} then 1 else 0 end),
+                   coalesce(sum(case when {REVENUE} then amount_cents end), 0) / 100.0
+            from {O} group by 1""")}
     have = {d: (n, float(rev)) for d, n, rev in q(f"select order_date, order_count, revenue from {rel}")}
     errs = []
     for d, (n, rev) in sorted(truth.items()):
@@ -307,7 +498,7 @@ def check_I5():
             errs.append(f"{d}: có ({have[d][0]} đơn, {have[d][1]:.2f}), cần ({n} đơn, {float(rev):.2f})")
     if errs:
         raise Fail("; ".join(errs[:4]) + (" ..." if len(errs) > 4 else ""))
-    return f"{len(truth)} ngày, số đơn và doanh thu (đã trừ đơn huỷ) khớp"
+    return f"{len(truth)} ngày, số đơn và doanh thu khớp quy tắc doanh thu hiện hành"
 
 
 def check_I6():
@@ -315,9 +506,12 @@ def check_I6():
     dups = q1(f"select count(*) - count(distinct event_id) from {rel}")
     if dups:
         raise Fail(f"{dups} dòng trùng event_id")
-    missing = [r[0] for r in q(f"select distinct event_id from raw.events except select event_id from {rel} order by 1")]
+    missing = [r[0] for r in q(f"""select distinct event_id from raw.events where event_id is not null
+                                   except select event_id from {rel} order by 1""")]
     if missing:
         raise Fail(f"thiếu {len(missing)} sự kiện, ví dụ {missing[:6]}. Lookback đủ dài chưa?")
+    if q1(f"select count(*) from {rel} where event_id is null"):
+        raise Fail("có sự kiện event_id = NULL")
     return f"{q1(f'select count(*) from {rel}')} sự kiện, bắt đủ sự kiện đến muộn"
 
 
@@ -326,7 +520,7 @@ def check_I7():
     rel = find("fct_orders")
     if "channel" not in columns(rel):
         raise Fail("fct_orders chưa có cột channel (stg_orders đã có chưa? on_schema_change là gì?)")
-    bad = q1(f"""select count(*) from raw.orders r join {rel} f using (order_id)
+    bad = q1(f"""select count(*) from {O} r join {rel} f using (order_id)
                  where r.channel is not null and f.channel is distinct from r.channel""")
     if bad:
         raise Fail(f"{bad} đơn có channel sai/null dù nguồn có giá trị")
@@ -336,6 +530,8 @@ def check_I7():
 
 def check_I8():
     rel = find("fct_events_microbatch")
+    if q1(f"select count(*) from {rel} where event_id is null"):
+        raise Fail("có sự kiện event_id = NULL")
     dups = q1(f"select count(*) - count(distinct event_id) from {rel}")
     if dups:
         raise Fail(f"{dups} dòng trùng event_id (dedupe trong model? stg_events có event_time chưa?)")
@@ -436,7 +632,7 @@ def check_S5():
 def check_S6():
     rel = find("fct_orders_pit")
     need_cols(rel, ["order_id", "customer_sk", "customer_city_at_order"])
-    n_raw, n = q1("select count(*) from raw.orders"), q1(f"select count(*) from {rel}")
+    n_raw, n = q1(f"select count(*) from {O}"), q1(f"select count(*) from {rel}")
     if n != n_raw:
         raise Fail(f"có {n} đơn, nguồn có {n_raw} (join làm mất/nhân dòng?)")
     if q1(f"select count(*) from {rel} where customer_sk is null"):
@@ -444,7 +640,7 @@ def check_S6():
     versions = truth_customer_versions()
     have = dict(q(f"select order_id, customer_city_at_order from {rel}"))
     errs = []
-    for oid, cid, odate in q("select order_id, customer_id, order_date from raw.orders order by 1"):
+    for oid, cid, odate in q(f"select order_id, customer_id, order_date from {O} order by 1"):
         ts = datetime.combine(odate, datetime.min.time())
         city = next((v["vals"][0] for v in versions.get(cid, [])
                      if v["valid_from"] <= ts and (v["valid_to"] is None or ts < v["valid_to"])), "Unknown")
@@ -486,7 +682,86 @@ def check_S8():
     return "dựng lại đúng toàn bộ lịch sử, valid_from = thời điểm thay đổi thật"
 
 
+# --------------------------------------------------------------------------- Sự cố (ngày 6–11)
+
+def _wrap(check_id, prefix):
+    try:
+        CHECKS[check_id][1]()
+    except Skip as e:
+        raise Fail(f"{prefix}: bài {check_id} chưa làm ({e})")
+    except Fail as e:
+        raise Fail(f"{prefix} → {check_id}: {e}")
+
+
+def check_P1():
+    need_day(6, "sự cố xảy ra ở ngày 6")
+    rel = find("stg_orders")
+    dups = q1(f"select count(*) - count(distinct order_id) from {rel}")
+    if dups:
+        raise Fail(f"stg_orders có {dups} dòng trùng order_id — staging phải đảm bảo 1 dòng / khoá")
+    _wrap("I3", "fct_orders")
+    return "staging đã chống trùng, fct_orders đúng"
+
+
+def check_P2():
+    need_day(7, "sự cố xảy ra ở ngày 7")
+    rel = find("stg_orders")
+    try:
+        q1(f"select count(*) from {rel}")
+    except duckdb.Error as e:
+        raise Fail(f"stg_orders đang lỗi khi query: {str(e).splitlines()[0]}")
+    _wrap("B3", "stg_orders")
+    _wrap("I3", "fct_orders")
+    return "staging đọc đúng cột mới, model phía sau không phải sửa"
+
+
+def check_P3():
+    need_day(8, "sự cố xảy ra ở ngày 8")
+    _wrap("I5", "doanh thu ngày")
+    _wrap("B7", "customer_lifetime")
+    _wrap("J3", "customer_order_summary")
+    return "trạng thái returned được nhận diện và loại khỏi doanh thu ở mọi model"
+
+
+def check_P4():
+    need_day(9, "sự cố xảy ra ở ngày 9")
+    _wrap("I3", "fct_orders")
+    _wrap("I5", "doanh thu ngày")
+    return "đã backfill số liệu bị sửa ngầm ở nguồn"
+
+
+def check_P5():
+    need_day(10, "sự cố xảy ra ở ngày 10")
+    for model in ("stg_events", "fct_events", "fct_events_by_ts"):
+        rel = find(model)
+        if q1(f"select count(*) from {rel} where event_id is null"):
+            raise Fail(f"{model} còn sự kiện event_id = NULL")
+    _wrap("I2", "fct_events")
+    _wrap("I6", "fct_events_by_ts")
+    return "đã chặn event_id NULL và backfill sự kiện trễ vượt lookback"
+
+
+def check_P6():
+    need_day(11, "sự cố xảy ra ở ngày 11")
+    rel = find("fct_orders")
+    if "is_deleted" not in columns(rel):
+        raise Fail("fct_orders chưa có cột is_deleted")
+    bad = q(f"""select o.order_id, f.is_deleted, o.is_deleted from {O} o join {rel} f using (order_id)
+                where f.is_deleted is distinct from o.is_deleted limit 5""")
+    if bad:
+        raise Fail(f"is_deleted sai (order_id, đang có, đúng): {bad}")
+    _wrap("I5", "doanh thu ngày")
+    _wrap("B7", "customer_lifetime")
+    return "đơn bị soft delete được đánh dấu và loại khỏi doanh thu"
+
+
 CHECKS = {
+    "B2": ("khai báo sources", check_B2),
+    "B3": ("stg_orders", check_B3),
+    "B4": ("các model staging còn lại", check_B4),
+    "B5": ("test cơ bản trên staging", check_B5),
+    "B6": ("fct_order_lines + dim_products", check_B6),
+    "B7": ("customer_lifetime", check_B7),
     "J1": ("cents_to_dollars", check_J1),
     "J2": ("clean_string", check_J2),
     "J3": ("pivot bằng for-loop + var", check_J3),
@@ -513,11 +788,17 @@ CHECKS = {
     "S6": ("point-in-time join", check_S6),
     "S7": ("SCD2 tự viết bằng incremental", check_S7),
     "S8": ("SCD2 từ CDC log", check_S8),
+    "P1": ("sự cố ngày 6", check_P1),
+    "P2": ("sự cố ngày 7", check_P2),
+    "P3": ("sự cố ngày 8", check_P3),
+    "P4": ("sự cố ngày 9", check_P4),
+    "P5": ("sự cố ngày 10", check_P5),
+    "P6": ("sự cố ngày 11", check_P6),
 }
 
 
 def main():
-    global con, DAY
+    global con, DAY, O
     if not DB_PATH.exists():
         sys.exit("Chưa có lab.duckdb. Chạy: python scripts/simulate.py reset")
     try:
@@ -525,8 +806,9 @@ def main():
     except duckdb.IOException as e:
         sys.exit(f"Không mở được lab.duckdb (đang bị tiến trình khác giữ?): {e}")
     DAY = q1("select current_day from raw._lab_state")
+    O = orders_truth()
     wanted = [a.upper() for a in sys.argv[1:]] or list(CHECKS)
-    print(f"Chấm bài ở NGÀY {DAY}/5\n")
+    print(f"Chấm bài ở NGÀY {DAY}/11\n")
     counts = defaultdict(int)
     for cid in wanted:
         if cid not in CHECKS:

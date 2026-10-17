@@ -52,7 +52,7 @@
 - [cau-hoi-on-tap.md](cau-hoi-on-tap.md) — câu hỏi tự kiểm tra / phỏng vấn Junior cho cả GĐ1.
 
 ### Thực hành
-- [../bai-tap-incremental-scd2-jinja/](../bai-tap-incremental-scd2-jinja/README.md) — lab dbt + DuckDB có tự chấm: 26 bài Jinja, incremental, snapshot, SCD2 (trung bình → nâng cao), dữ liệu thay đổi qua 6 "ngày".
+- [../bai-tap-incremental-scd2-jinja/](../bai-tap-incremental-scd2-jinja/README.md) — lab dbt + DuckDB có tự chấm: 38 bài từ cơ bản (tự dựng staging) → Jinja, incremental, snapshot, SCD2 → 6 sự cố production thật, dữ liệu thay đổi qua 12 "ngày".
 
 ## Cách dùng trong lịch ngày
 

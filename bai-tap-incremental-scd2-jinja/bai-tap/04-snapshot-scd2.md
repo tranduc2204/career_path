@@ -1,4 +1,4 @@
-# 03 — Snapshot & SCD2 (S1–S8)
+# 04 — Snapshot & SCD2 (S1–S8)
 
 > Lý thuyết: [2.3 snapshots](../../GD1-ly-thuyet/tuan-2/03-snapshots-scd2.md)
 

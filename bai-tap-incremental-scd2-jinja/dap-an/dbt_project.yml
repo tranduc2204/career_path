@@ -1,0 +1,29 @@
+name: lab
+version: "1.0.0"
+config-version: 2
+profile: lab
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+seed-paths: ["seeds"]
+
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  lookback_days: 3
+  # P3: thêm 'returned' khi nguồn có trạng thái mới
+  order_statuses: ["placed", "shipped", "delivered", "cancelled", "returned"]
+  # Quy tắc doanh thu đặt MỘT chỗ (dùng trong int_orders)
+  non_revenue_statuses: ["cancelled", "returned"]
+
+models:
+  lab:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table

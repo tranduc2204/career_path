@@ -1,96 +1,99 @@
-# Lab: Incremental · Snapshot · SCD2 · Jinja (dbt + DuckDB)
+# Lab: từ staging tới vận hành sự cố (dbt + DuckDB)
 
-Bộ bài tập từ **trung bình đến nâng cao**, chạy hoàn toàn trên máy bằng DuckDB, không cần cloud.
+Bộ bài tập **từ cơ bản đến nâng cao**, chạy hoàn toàn trên máy bằng DuckDB:
 
-Điểm khác với bài tập thông thường: dữ liệu nguồn **thay đổi theo từng "ngày"**. Một script giả lập lần lượt tạo ra: đơn đổi trạng thái, đơn đến muộn, sự kiện bị gửi trùng, khách đổi địa chỉ, khách bị xoá, nguồn thêm cột mới... Bạn build model, cho thời gian trôi, rồi xem model có còn đúng không. Có **script tự chấm** so kết quả của bạn với dữ liệu nguồn.
+1. **Xây dựng (ngày 0–5):** tự dựng staging từ dữ liệu thô → mart đầu tiên → Jinja → incremental → snapshot/SCD2.
+2. **Vận hành (ngày 6–11):** hệ thống đã ổn định thì nguồn bắt đầu gây sự cố giống ngoài thực tế (dữ liệu trùng, đổi tên cột, trạng thái mới, sửa ngầm số liệu cũ, sự kiện lỗi, soft delete). Bạn điều tra, sửa, viết runbook và postmortem.
+
+Dữ liệu nguồn **thay đổi theo từng "ngày"** do một script giả lập. Có **script tự chấm** so kết quả của bạn với dữ liệu nguồn.
 
 ## Cấu trúc
 
 ```
 bai-tap-incremental-scd2-jinja/
-├── README.md                ← file này
-├── requirements.txt
-├── .venv/                   ← môi trường Python đã cài sẵn dbt-core 1.12 + dbt-duckdb 1.11
-├── bai-tap/                 ← ĐỀ BÀI
-│   ├── 00-setup.md          ← cài đặt, mô hình dữ liệu, kịch bản 6 ngày, quy trình làm bài
-│   ├── 01-jinja.md          ← J1–J10
-│   ├── 02-incremental.md    ← I1–I9
-│   ├── 03-snapshot-scd2.md  ← S1–S8
-│   └── 04-thu-thach-cuoi.md ← tổng hợp, thử thách mở, câu hỏi phỏng vấn
-├── lab/                     ← dbt project BẠN LÀM BÀI Ở ĐÂY
-│   ├── models/staging/      ← cho sẵn
-│   ├── models/marts/        ← trống, bạn viết
-│   ├── macros/ snapshots/ tests/
+├── README.md
+├── pyproject.toml            ← uv project: dbt-core 1.x + dbt-duckdb 1.x
+├── bai-tap/                  ← ĐỀ BÀI
+│   ├── 00-setup.md           ← cài đặt, dữ liệu, dòng thời gian 12 ngày, quy trình
+│   ├── 01-co-ban.md          ← B1–B8: raw → staging → test → mart đầu tiên
+│   ├── 02-jinja.md           ← J1–J10
+│   ├── 03-incremental.md     ← I1–I9
+│   ├── 04-snapshot-scd2.md   ← S1–S8
+│   ├── 05-su-co-thuc-te.md   ← P1–P6: sự cố production ngày 6–11
+│   └── 06-thu-thach-cuoi.md  ← tổng hợp, thử thách mở, câu hỏi phỏng vấn
+├── lab/                      ← dbt project BẠN LÀM BÀI Ở ĐÂY (trống, tự xây từ staging)
 │   └── scripts/
-│       ├── simulate.py      ← cho thời gian trôi: reset / next / status / goto
-│       ├── check.py         ← tự chấm
-│       └── replay.sh        ← làm lại từ ngày 0 tới ngày N, build mỗi ngày, rồi chấm
-└── dap-an/                  ← ĐÁP ÁN (đã kiểm chứng: 26/26 pass ở cả 6 ngày). Đừng mở trước khi tự làm!
+│       ├── simulate.py       ← cho thời gian trôi: reset / next / status [--reveal] / goto
+│       ├── check.py          ← tự chấm 38 bài
+│       ├── replay.sh         ← làm lại từ ngày 0 tới ngày N, build + runbook mỗi ngày, rồi chấm
+│       └── hooks/            ← (bạn tạo) runbook after_day_<N>.sh cho giai đoạn sự cố
+└── dap-an/                   ← ĐÁP ÁN, đã kiểm chứng: 38/38 PASS sau replay tới ngày 11. Đừng mở trước!
 ```
 
 ## Bắt đầu nhanh
 
 ```bash
 cd ~/Desktop/target_ae/bai-tap-incremental-scd2-jinja
-source .venv/bin/activate
+uv sync && source .venv/bin/activate
 cd lab
-export DBT_PROFILES_DIR=.          # profiles.yml nằm ngay trong lab/
+export DBT_PROFILES_DIR=.
 
-dbt deps                           # cài dbt_utils
-python scripts/simulate.py reset   # tạo lab.duckdb, nạp dữ liệu ngày 0
-dbt build                          # build staging cho sẵn
-python scripts/check.py            # 26 bài, lúc này tất cả SKIP
+dbt deps
+python scripts/simulate.py reset
+python scripts/check.py            # 38 bài, lúc này tất cả SKIP
 ```
 
-Chi tiết đầy đủ: [bai-tap/00-setup.md](bai-tap/00-setup.md).
+Rồi mở [bai-tap/00-setup.md](bai-tap/00-setup.md) và [bai-tap/01-co-ban.md](bai-tap/01-co-ban.md).
 
 ## Danh sách bài
 
-⭐⭐ trung bình · ⭐⭐⭐ khá · ⭐⭐⭐⭐ nâng cao
+⭐ cơ bản · ⭐⭐ trung bình · ⭐⭐⭐ khá · ⭐⭐⭐⭐ nâng cao
 
-| ID | Cấp | Chủ đề | Bài học chính | Lỗi lộ ra ở ngày |
-|---|---|---|---|---|
-| J1 | ⭐⭐ | Macro `cents_to_dollars` | Macro có tham số mặc định | – |
-| J2 | ⭐⭐ | Macro `clean_string` | Ghép chuỗi trong Jinja, whitespace control | – |
-| J3 | ⭐⭐ | Pivot bằng `for` + `var` | `loop.last`, sinh cột bằng vòng lặp | – |
-| J4 | ⭐⭐⭐ | Pivot động bằng `run_query` | `execute`, `depends_on`, schema thay đổi theo dữ liệu | 4 |
-| J5 | ⭐⭐⭐ | Custom generic test | Test có tham số, `arguments:` | – |
-| J6 | ⭐⭐⭐ | `generate_schema_name` | Tách schema dev/prod | – |
-| J7 | ⭐⭐⭐ | Macro `get_incremental_filter` | `is_incremental()` trong macro, `dbt.dateadd` | 3 |
-| J8 | ⭐⭐⭐⭐ | Audit bằng `graph` | Đọc metadata project, `run-operation`, raise lỗi | – |
-| J9 | ⭐⭐⭐⭐ | `adapter.dispatch` | Viết macro chạy được nhiều warehouse | – |
-| J10 | ⭐⭐⭐⭐ | Macro `scd2_from_changelog` | Macro sinh cả một model | – |
-| I1 | ⭐⭐ | `append` | Append không chống trùng | 2 |
-| I2 | ⭐⭐ | Chống trùng sự kiện | `unique_key` + dedupe trong batch | 2 |
-| I3/I4 | ⭐⭐/⭐⭐⭐ | `merge` + đơn đến muộn | Watermark sai cột → mất dữ liệu vĩnh viễn | 2, 5 |
-| I5 | ⭐⭐⭐ | `delete+insert` theo ngày | Phải tính lại **cả ngày** bị ảnh hưởng | 2, 4, 5 |
-| I6 | ⭐⭐⭐ | Lookback theo event time | Chọn độ dài lookback | 3 |
-| I7 | ⭐⭐⭐ | `on_schema_change` | Nguồn thêm cột, introspection bằng Jinja | 4 |
-| I8 | ⭐⭐⭐⭐ | `microbatch` | `event_time`, backfill theo khoảng ngày | – |
-| I9 | ⭐⭐⭐⭐ | Bảo vệ & đối soát | `full_refresh=false`, test incremental = full refresh, backfill bằng vars | – |
-| S1 | ⭐⭐ | Snapshot `timestamp` | SCD2 cơ bản | 1, 4 |
-| S2 | ⭐⭐ | Snapshot `check` | Nguồn không có `updated_at` | 1, 3, 5 |
-| S3 | ⭐⭐⭐ | Bẫy `updated_at` | Khi nào `timestamp` bỏ sót thay đổi | 3 |
-| S4 | ⭐⭐⭐ | Hard deletes | `invalidate` vs `new_record` | 3 |
-| S5 | ⭐⭐⭐ | `dim_customers` SCD2 | Surrogate key, unknown member, test khoảng hiệu lực | 3 |
-| S6 | ⭐⭐⭐⭐ | Point-in-time join | Thuộc tính tại thời điểm đặt đơn, late-arriving dimension | 1, 2, 3 |
-| S7 | ⭐⭐⭐⭐ | SCD2 tự viết bằng incremental | Hiểu snapshot làm gì bên trong | 3 |
-| S8 | ⭐⭐⭐⭐ | SCD2 từ CDC log | Dựng lại lịch sử bất cứ lúc nào | – |
+### Giai đoạn xây dựng (ngày 0–5)
 
-## Lộ trình gợi ý (5 buổi chiều × 4h)
+| ID | Cấp | Chủ đề | Bài học chính |
+|---|---|---|---|
+| B1 | ⭐ | Khám phá dữ liệu nguồn | Xem dữ liệu trước khi viết model (không chấm) |
+| B2 | ⭐ | Khai báo sources | `source()`, nơi duy nhất nhắc tới bảng thô |
+| B3 | ⭐ | `stg_orders` | Rename, đổi đơn vị, mẫu CTE, view |
+| B4 | ⭐ | Staging còn lại | Làm sạch chuỗi, staging là "hợp đồng" |
+| B5 | ⭐⭐ | Test cơ bản | unique/not_null/accepted_values/relationships, test đỏ lần đầu, severity |
+| B6 | ⭐⭐ | `dim_products`, `fct_order_lines` | Grain, bẫy fan-out khi join |
+| B7 | ⭐⭐ | `customer_lifetime` + `int_orders` | Quy tắc nghiệp vụ đặt một chỗ |
+| B8 | ⭐ | View vs table, chọn model | `+`, `dbt build` vs `run` vs `test` (không chấm) |
+| J1–J10 | ⭐→⭐⭐⭐⭐ | Jinja | Macro, vòng lặp, `run_query`, generic test, `generate_schema_name`, `graph`, `dispatch` |
+| I1–I9 | ⭐⭐→⭐⭐⭐⭐ | Incremental | append/merge/delete+insert, đến muộn, lookback, `on_schema_change`, microbatch, đối soát |
+| S1–S8 | ⭐⭐→⭐⭐⭐⭐ | Snapshot & SCD2 | timestamp/check, bẫy `updated_at`, hard delete, point-in-time, SCD2 tự viết, CDC |
+
+### Giai đoạn vận hành (ngày 6–11)
+
+| ID | Ngày | Cấp | Triệu chứng ban đầu |
+|---|---|---|---|
+| P1 | 6 | ⭐⭐ | Test staging đỏ, dashboard đứng yên |
+| P2 | 7 | ⭐⭐⭐ | Job sáng lỗi, 20 model bị SKIP |
+| P3 | 8 | ⭐⭐⭐ | Kế toán báo doanh thu sai + yêu cầu quy tắc mới |
+| P4 | 9 | ⭐⭐⭐⭐ | Mọi thứ xanh (trừ test đối soát nếu có), nhưng số lệch sổ sách |
+| P5 | 10 | ⭐⭐⭐⭐ | Marketing báo thiếu event so với Mixpanel |
+| P6 | 11 | ⭐⭐⭐⭐ | Không có gì đỏ, QA báo đơn test vẫn tính doanh thu |
+
+Nguyên nhân từng sự cố bị giấu — đó là phần phải tự điều tra.
+
+## Lộ trình gợi ý (buổi chiều 4h)
 
 | Buổi | Làm gì |
 |---|---|
-| 1 | Setup, J1–J6 (ở ngày 0) |
-| 2 | I1, I2, I3, I5 ở ngày 0 → `next` tới ngày 2 → gặp lỗi → làm I4, sửa I5 |
-| 3 | J7 + I6, I7 (tới ngày 4), I8, I9, J8, J9 |
-| 4 | S1–S4 (dùng `replay.sh`, vì snapshot phải chạy từ ngày 0), S5, S6 |
-| 5 | S7, J10 + S8, thử thách cuối |
+| 1 | Setup, B1–B8 |
+| 2 | J1–J6 |
+| 3 | I1, I2, I3, I5 ở ngày 0 → `next` tới ngày 2 → gặp lỗi → I4, sửa I5 |
+| 4 | J7 + I6, I7 (tới ngày 4), I8, I9, J8, J9 |
+| 5 | S1–S4 (dùng `replay.sh`), S5, S6 |
+| 6 | S7, J10 + S8 → `replay.sh 5` xanh toàn bộ = hệ thống "ổn định" |
+| 7–8 | P1–P6, mỗi sự cố viết postmortem; cuối cùng `replay.sh 11` xanh 38/38 |
 
 ## Quy tắc dùng đáp án
 
-1. Tự làm, chạy `check.py`, đọc thông báo lỗi, sửa. Thông báo lỗi được viết để gợi hướng.
-2. Bí quá 30 phút thì mở phần **Gợi ý** trong đề (dạng thu gọn).
-3. Chỉ mở `dap-an/` sau khi đã PASS, để so cách làm. Hoặc khi đã thử hết gợi ý.
+1. Tự làm, chạy `check.py`, đọc thông báo lỗi, sửa. Thông báo được viết để gợi hướng.
+2. Bí quá 30 phút thì mở phần **Gợi ý** (thu gọn) trong đề.
+3. Chỉ mở `dap-an/` sau khi đã PASS (để so cách làm), hoặc khi đã thử hết gợi ý.
 
-Muốn chạy thử toàn bộ đáp án: copy `lab/` sang chỗ khác, chép đè `dap-an/*` lên, rồi chạy `./scripts/replay.sh`.
+Chạy thử toàn bộ đáp án: copy `lab/` sang chỗ khác, chép đè `dap-an/*` lên, rồi `./scripts/replay.sh 11`. Build ở ngày 9 và 10 sẽ báo lỗi **trước khi** runbook chạy — đó là các test đối soát đang bắt sự cố, runbook backfill ngay sau đó làm lành dữ liệu.

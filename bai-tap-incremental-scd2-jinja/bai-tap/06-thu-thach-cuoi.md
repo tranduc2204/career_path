@@ -1,22 +1,23 @@
-# 04 — Thử thách cuối
+# 06 — Thử thách cuối
 
 ## 1. Chạy trọn bộ
 
 ```bash
-./scripts/replay.sh
-dbt run -s fct_events_microbatch --event-time-start 2025-12-29 --event-time-end 2026-01-07
+./scripts/replay.sh 11
+dbt run -s fct_events_microbatch --event-time-start 2025-12-29 --event-time-end 2026-01-13
 python scripts/check.py
 ```
 
-Mục tiêu: **26/26 PASS**. Chạy thêm `dbt run-operation audit_incremental_models` (J8) — không có lỗi.
+Mục tiêu: **38/38 PASS** mà không thao tác tay nào ngoài runbook trong `scripts/hooks/`. Chạy thêm `dbt run-operation audit_incremental_models` (J8) — không có lỗi.
 
 ## 2. Viết lại bằng lời (quan trọng nhất)
 
 Tạo `lab/NOTES.md`, trả lời ngắn gọn — đây là thứ bạn sẽ nói trong phỏng vấn:
 
 1. Bảng "model – chiến lược – `unique_key` – watermark – lý do chọn" cho mọi model incremental.
-2. 3 lỗi bạn đã gặp trong lab, mỗi lỗi: triệu chứng → nguyên nhân → cách sửa → cách phát hiện sớm trong production.
-3. So sánh 3 cách dựng SCD2 (snapshot / incremental tự viết / CDC log): chi phí, độ chính xác thời gian, khả năng dựng lại, khi nào dùng.
+2. 6 postmortem của giai đoạn sự cố (P1–P6), theo mẫu cuối file 05.
+3. 3 lỗi bạn tự gây ra trong giai đoạn xây dựng, mỗi lỗi: triệu chứng → nguyên nhân → cách sửa → cách phát hiện sớm.
+4. So sánh 3 cách dựng SCD2 (snapshot / incremental tự viết / CDC log): chi phí, độ chính xác thời gian, khả năng dựng lại, khi nào dùng.
 
 ## 3. Thử thách mở (không có trong check.py)
 
@@ -44,3 +45,6 @@ Trả lời miệng, mỗi câu ≤ 2 phút, có ví dụ từ lab:
 8. Fact đến trước dimension: bạn làm gì để không mất dòng, và để sửa lại khi dimension đến?
 9. Snapshot lỡ không chạy 3 ngày. Mất gì? Lấy lại được không?
 10. Có CDC log thì còn cần snapshot không?
+11. Kể một sự cố dữ liệu bạn đã xử lý: phát hiện thế nào, ảnh hưởng, nguyên nhân, cách sửa, phòng ngừa. (dùng một postmortem P1–P6)
+12. Nguồn đổi tên cột lúc nửa đêm. Thiết kế project của bạn giới hạn ảnh hưởng thế nào?
+13. Số liệu dashboard lệch sổ sách nhưng mọi test đều xanh. Bạn bắt đầu điều tra từ đâu?

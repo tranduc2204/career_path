@@ -1,4 +1,4 @@
-# 02 — Incremental (I1–I9)
+# 03 — Incremental (I1–I9)
 
 > Lý thuyết: [2.1 incremental](../../GD1-ly-thuyet/tuan-2/01-incremental-models.md) · [2.2 late-arriving & backfill](../../GD1-ly-thuyet/tuan-2/02-late-arriving-data-va-backfill.md)
 
@@ -86,8 +86,8 @@ qualify row_number() over (partition by event_id order by _loaded_at) = 1
 | Cột | Ý nghĩa |
 |---|---|
 | `order_date` | |
-| `order_count` | số đơn **không** bị huỷ |
-| `revenue` | tổng `amount` của đơn không bị huỷ (0 nếu không có) |
+| `order_count` | số đơn **tính doanh thu** (hiện tại: không bị huỷ — quy tắc này sẽ thay đổi ở giai đoạn sự cố, nên đọc từ `int_orders.is_revenue_order` của bài B7) |
+| `revenue` | tổng `amount` của các đơn tính doanh thu (0 nếu không có) |
 | `max_loaded_at` | `_loaded_at` lớn nhất của các đơn trong ngày — dùng làm watermark |
 
 - `incremental_strategy='delete+insert'`, `unique_key='order_date'`.
@@ -139,7 +139,7 @@ python scripts/check.py I6       # PASS
 **Bối cảnh:** ở **ngày 4**, `raw.orders` thêm cột `channel`.
 
 **Yêu cầu**
-1. `stg_orders`: chỉ chọn `channel` khi nguồn có cột này (dùng `adapter.get_columns_in_relation` — xem Bonus cuối 01-jinja.md). Build ở ngày 0–3 phải không lỗi.
+1. `stg_orders`: chỉ chọn `channel` khi nguồn có cột này (dùng `adapter.get_columns_in_relation` — xem Bonus cuối 02-jinja.md). Build ở ngày 0–3 phải không lỗi.
 2. Thử lần lượt 4 cấu hình của `fct_orders` ở **ngày 4**. Trước mỗi lần thử: `./scripts/replay.sh 3 && python scripts/simulate.py next`, rồi `dbt build -s stg_orders fct_orders`.
 
    | # | Cấu hình | Điều bạn sẽ thấy (trên dbt-duckdb) |
@@ -178,9 +178,9 @@ python scripts/check.py I6       # PASS
 
 **Cách chạy — luôn chỉ rõ khoảng ngày:**
 ```bash
-dbt run -s fct_events_microbatch --event-time-start 2025-12-29 --event-time-end 2026-01-07
+dbt run -s fct_events_microbatch --event-time-start 2025-12-29 --event-time-end 2026-01-13
 ```
-Lý do: dữ liệu giả lập nằm ở 12/2025–01/2026, còn microbatch mặc định chạy tới **thời điểm hiện tại thật** → hàng trăm batch rỗng. Đây cũng là lý do model này bị `--exclude` khỏi build hằng ngày.
+(Phủ tới ngày 11 của giai đoạn sự cố.) Lý do phải chỉ rõ: dữ liệu giả lập nằm ở 12/2025–01/2026, còn microbatch mặc định chạy tới **thời điểm hiện tại thật** → hàng trăm batch rỗng. Đây cũng là lý do model này bị `--exclude` khỏi build hằng ngày.
 
 **Thử nghiệm**
 1. Xem log: mỗi batch là 1 câu `delete ... where event_ts >= X and event_ts < Y` + `insert`. Các batch chạy **song song**.
