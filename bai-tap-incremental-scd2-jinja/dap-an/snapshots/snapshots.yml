@@ -1,0 +1,30 @@
+snapshots:
+  # S1 + S4 — timestamp, đóng bản ghi bị xoá cứng
+  - name: snap_customers
+    relation: ref('stg_customers')
+    config:
+      unique_key: customer_id
+      strategy: timestamp
+      updated_at: updated_at
+      hard_deletes: invalidate
+
+  # S3 + S4 — check trên cột quan tâm, ghi nhận xoá bằng dòng mới
+  - name: snap_customers_check
+    relation: ref('stg_customers')
+    config:
+      unique_key: customer_id
+      strategy: check
+      check_cols: [city, tier]
+      hard_deletes: new_record
+
+  # S2 — nguồn không có updated_at → bắt buộc check
+  - name: snap_products
+    relation: ref('stg_products')
+    config:
+      unique_key: product_id
+      strategy: check
+      check_cols: [product_name, category, list_price]
+    columns:
+      - name: product_id
+        data_tests:
+          - one_current_row_per_key

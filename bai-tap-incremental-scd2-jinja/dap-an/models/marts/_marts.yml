@@ -1,0 +1,67 @@
+models:
+  - name: fct_orders
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: amount
+        data_tests:
+          - is_positive
+
+  - name: fct_events
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+
+  - name: fct_daily_revenue
+    columns:
+      - name: order_date
+        data_tests: [unique]
+      - name: revenue
+        data_tests:
+          - is_positive:
+              arguments:
+                allow_zero: true
+
+  - name: dim_customers
+    columns:
+      - name: customer_sk
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - one_current_row_per_key:
+              arguments:
+                current_condition: is_current
+    data_tests:
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: valid_from
+            upper_bound_column: valid_to
+            partition_by: customer_id
+            gaps: allowed
+
+  - name: fct_orders_pit
+    columns:
+      - name: order_id
+        data_tests: [unique]
+      - name: customer_sk
+        data_tests: [not_null]
+
+  - name: dim_customers_scd2_manual
+    columns:
+      - name: scd_id
+        data_tests: [unique]
+      - name: customer_id
+        data_tests:
+          - one_current_row_per_key:
+              arguments:
+                current_condition: is_current
+
+  - name: dim_customers_from_cdc
+    columns:
+      - name: scd_id
+        data_tests: [unique]
+      - name: customer_id
+        data_tests:
+          - one_current_row_per_key:
+              arguments:
+                current_condition: is_current

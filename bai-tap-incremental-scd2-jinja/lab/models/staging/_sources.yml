@@ -1,0 +1,17 @@
+sources:
+  - name: raw
+    schema: raw
+    description: Dữ liệu do scripts/simulate.py nạp vào. Mỗi lần `simulate.py next` là một "ngày" mới.
+    tables:
+      - name: customers
+        description: Trạng thái hiện tại của khách hàng (nguồn ghi đè). Có updated_at nhưng KHÔNG phải lúc nào cũng tin được.
+      - name: customer_changelog
+        description: CDC log — mỗi lần insert/update/delete khách hàng là 1 dòng (op = I/U/D), changed_at luôn đúng.
+      - name: products
+        description: Sản phẩm. KHÔNG có updated_at. Giá lưu bằng cents.
+      - name: orders
+        description: Đơn hàng. Trạng thái thay đổi theo thời gian. Từ ngày 4 có thêm cột channel.
+      - name: order_items
+        description: Dòng đơn hàng.
+      - name: events
+        description: Sự kiện web, append-only, có thể bị gửi trùng (at-least-once) và đến muộn.

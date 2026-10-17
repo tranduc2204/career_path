@@ -1,0 +1,13 @@
+lab:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: lab.duckdb
+      schema: dev
+      threads: 4
+    prod:
+      type: duckdb
+      path: lab.duckdb
+      schema: prod
+      threads: 4

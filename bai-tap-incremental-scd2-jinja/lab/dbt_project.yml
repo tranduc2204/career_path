@@ -1,0 +1,26 @@
+name: lab
+version: "1.0.0"
+config-version: 2
+profile: lab
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+seed-paths: ["seeds"]
+
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Số ngày lùi lại khi lọc incremental (bài I6, J7)
+  lookback_days: 3
+  # Danh sách trạng thái đơn hàng (bài J3)
+  order_statuses: ["placed", "shipped", "delivered", "cancelled"]
+
+models:
+  lab:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

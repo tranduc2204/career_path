@@ -1,0 +1,3 @@
+# Giữ dbt Core v1 (khớp với roadmap và tài liệu lý thuyết)
+dbt-core>=1.10,<2
+dbt-duckdb>=1.10,<2
