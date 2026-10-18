@@ -8,12 +8,12 @@ with source as (
 
 renamed as (
 
-    select
+    select distinct
         order_id,
         customer_id,
         order_date,
         status,
-        amount_cents,
+        amount_cents / 100 as amount,
         updated_at,
         _loaded_at
 

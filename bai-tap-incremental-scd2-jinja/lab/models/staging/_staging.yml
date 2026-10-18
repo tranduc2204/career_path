@@ -1,0 +1,41 @@
+models:
+  - name: stg__customers
+    description: "Staging model for customers"
+    columns:
+      - name: customer_id
+        description: "Unique identifier for each customer"
+        data_tests:
+          - not_null
+          - unique
+  - name: stg__products
+    description: "Staging model for products"
+    columns:
+      - name: product_id
+        description: "Unique identifier for each product"
+        data_tests:
+          - not_null
+          - unique
+  - name: stg__orders
+    description: "Staging model for orders"
+    columns:
+      - name: order_id
+        description: "Unique identifier for each order"
+        data_tests:
+          - not_null
+          - unique
+      - name: status
+        description: "Status of the order"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['placed', 'shipped', 'delivered', 'cancelled']
+      - name: customer_id
+        description: "Unique identifier for each customer"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg__customers')
+                field: customer_id
+              config:
+                severity: warn

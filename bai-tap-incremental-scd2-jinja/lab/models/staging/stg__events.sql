@@ -8,7 +8,7 @@ with source as (
 
 renamed as (
 
-    select
+    select distinct
         event_id,
         user_id,
         event_type,

@@ -10,10 +10,10 @@ renamed as (
 
     select
         customer_id,
-        full_name,
-        email,
-        city,
-        tier,
+        coalesce(trim(full_name),NULL) as full_name,
+        coalesce(trim(lower(email)),NULL) as email,
+        coalesce(trim(city),NULL) as city,
+        coalesce(trim(tier),NULL) as tier,
         updated_at,
         _loaded_at
 

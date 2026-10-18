@@ -13,7 +13,7 @@ renamed as (
         line_no,
         product_id,
         quantity,
-        unit_price_cents,
+        unit_price_cents / 100 as unit_price,
         _loaded_at
 
     from source
