@@ -1,0 +1,104 @@
+==================== 2026-10-18T14:06:50.840830Z | 00000000-0000-0000-0000-000000000000 ====================
+==================== 2026-10-18T14:06:50.841290Z | b0417169-8eb8-4751-9bc1-37514489f989 ====================
+14:06:50.841327 [info ]: Starting dbt LSP server
+14:06:50.841367 [info ]: Connecting to LSP client on port 8000
+14:06:50.841939 [info ]: Successfully connected to LSP client
+14:06:50.842003 [info ]: Creating LSP service...
+14:06:50.845061 [info ]: Creating LSP server...
+14:06:50.845105 [info ]: Starting LSP server...
+14:06:50.897762 [info ]: Loading ~/.dbt/profiles.yml
+14:08:46.367979 [info ]: Loading ~/.dbt/profiles.yml
+14:08:46.746333 [info ]: Loading ~/.dbt/profiles.yml
+14:08:48.485002 [debug]: Ignoring unsupported LSP notification
+14:09:04.916415 [debug]: Ignoring unsupported LSP notification
+14:09:08.344358 [info ]: Loading ~/.dbt/profiles.yml
+14:09:15.739336 [debug]: Ignoring unsupported LSP notification
+14:09:19.146014 [debug]: Ignoring unsupported LSP notification
+14:11:14.658689 [info ]: Loading ~/.dbt/profiles.yml
+14:11:15.333945 [info ]: Loading ~/.dbt/profiles.yml
+14:11:23.203038 [debug]: Ignoring unsupported LSP notification
+14:11:26.563286 [info ]: Loading ~/.dbt/profiles.yml
+14:11:31.423912 [debug]: Ignoring unsupported LSP notification
+14:11:41.638710 [debug]: Ignoring unsupported LSP notification
+14:11:44.367373 [info ]: Loading ~/.dbt/profiles.yml
+14:12:58.103364 [info ]: Loading ~/.dbt/profiles.yml
+14:13:59.604632 [info ]: Loading ~/.dbt/profiles.yml
+14:14:35.287711 [info ]: Loading ~/.dbt/profiles.yml
+14:14:35.609080 [info ]: Loading ~/.dbt/profiles.yml
+14:14:46.459013 [info ]: Loading ~/.dbt/profiles.yml
+14:15:17.240124 [info ]: Loading ~/.dbt/profiles.yml
+16:23:07.723720 [info ]: Loading ~/.dbt/profiles.yml
+16:23:11.662863 [debug]: Ignoring unsupported LSP notification
+16:23:14.093685 [info ]: Loading ~/.dbt/profiles.yml
+16:24:10.988659 [info ]: Loading ~/.dbt/profiles.yml
+16:24:12.491276 [info ]: Loading ~/.dbt/profiles.yml
+16:24:15.165329 [debug]: Ignoring unsupported LSP notification
+16:24:17.806456 [info ]: Loading ~/.dbt/profiles.yml
+16:33:41.547272 [debug]: Ignoring unsupported LSP notification
+16:33:43.467477 [info ]: Loading ~/.dbt/profiles.yml
+16:35:59.473565 [info ]: Loading ~/.dbt/profiles.yml
+16:36:00.229005 [debug]: Ignoring unsupported LSP notification
+16:36:02.450728 [info ]: Loading ~/.dbt/profiles.yml
+16:36:12.745325 [info ]: Loading ~/.dbt/profiles.yml
+16:36:49.847420 [info ]: Loading ~/.dbt/profiles.yml
+16:37:01.140135 [debug]: Ignoring unsupported LSP notification
+16:37:03.672688 [info ]: Loading ~/.dbt/profiles.yml
+16:37:27.994482 [debug]: Ignoring unsupported LSP notification
+16:37:29.943401 [info ]: Loading ~/.dbt/profiles.yml
+16:37:58.247642 [debug]: Ignoring unsupported LSP notification
+16:38:09.661166 [debug]: Ignoring unsupported LSP notification
+16:38:11.330407 [info ]: Loading ~/.dbt/profiles.yml
+16:38:30.710460 [info ]: Loading ~/.dbt/profiles.yml
+16:38:32.705878 [debug]: Ignoring unsupported LSP notification
+16:38:35.136136 [info ]: Loading ~/.dbt/profiles.yml
+16:38:40.721013 [debug]: Ignoring unsupported LSP notification
+16:38:45.926002 [debug]: Ignoring unsupported LSP notification
+16:38:47.750536 [info ]: Loading ~/.dbt/profiles.yml
+16:38:51.343654 [debug]: Ignoring unsupported LSP notification
+16:38:53.271897 [info ]: Loading ~/.dbt/profiles.yml
+16:39:21.004169 [debug]: Ignoring unsupported LSP notification
+16:39:22.810873 [info ]: Loading ~/.dbt/profiles.yml
+16:40:03.671718 [debug]: Ignoring unsupported LSP notification
+16:40:05.639492 [info ]: Loading ~/.dbt/profiles.yml
+16:40:14.291436 [debug]: Ignoring unsupported LSP notification
+16:40:16.059484 [info ]: Loading ~/.dbt/profiles.yml
+16:40:37.740686 [info ]: Loading ~/.dbt/profiles.yml
+16:40:39.130226 [debug]: Ignoring unsupported LSP notification
+16:40:41.285407 [info ]: Loading ~/.dbt/profiles.yml
+16:40:44.330974 [debug]: Ignoring unsupported LSP notification
+16:40:46.677275 [info ]: Loading ~/.dbt/profiles.yml
+16:41:31.007631 [info ]: Loading ~/.dbt/profiles.yml
+16:42:07.214306 [debug]: Ignoring unsupported LSP notification
+16:42:07.598196 [info ]: Loading ~/.dbt/profiles.yml
+16:42:09.853399 [info ]: Loading ~/.dbt/profiles.yml
+16:42:11.503752 [debug]: Ignoring unsupported LSP notification
+16:42:22.466521 [info ]: Loading ~/.dbt/profiles.yml
+16:42:23.115322 [debug]: Ignoring unsupported LSP notification
+16:42:25.615727 [info ]: Loading ~/.dbt/profiles.yml
+16:42:29.318818 [debug]: Ignoring unsupported LSP notification
+16:42:32.727213 [debug]: Ignoring unsupported LSP notification
+16:43:12.398387 [debug]: Ignoring unsupported LSP notification
+16:43:14.217248 [info ]: Loading ~/.dbt/profiles.yml
+16:45:08.204800 [debug]: Ignoring unsupported LSP notification
+16:45:10.046816 [info ]: Loading ~/.dbt/profiles.yml
+16:45:29.667363 [info ]: Loading ~/.dbt/profiles.yml
+16:45:43.261084 [debug]: Ignoring unsupported LSP notification
+16:45:45.482714 [info ]: Loading ~/.dbt/profiles.yml
+16:46:00.280777 [debug]: Ignoring unsupported LSP notification
+16:46:02.082560 [info ]: Loading ~/.dbt/profiles.yml
+16:47:46.457733 [debug]: Ignoring unsupported LSP notification
+16:49:03.633680 [debug]: Ignoring unsupported LSP notification
+16:49:05.713384 [info ]: Loading ~/.dbt/profiles.yml
+16:50:07.833167 [info ]: Loading ~/.dbt/profiles.yml
+16:50:16.562720 [debug]: Ignoring unsupported LSP notification
+16:50:19.024539 [info ]: Loading ~/.dbt/profiles.yml
+16:50:37.016712 [debug]: Ignoring unsupported LSP notification
+16:50:38.994292 [info ]: Loading ~/.dbt/profiles.yml
+16:53:25.580917 [info ]: Loading ~/.dbt/profiles.yml
+16:53:25.960591 [info ]: Loading ~/.dbt/profiles.yml
+16:53:29.432909 [info ]: Loading ~/.dbt/profiles.yml
+16:55:30.498064 [info ]: Loading ~/.dbt/profiles.yml
+16:55:33.729094 [debug]: Ignoring unsupported LSP notification
+16:55:36.241748 [info ]: Loading ~/.dbt/profiles.yml
+16:55:40.741850 [debug]: Ignoring unsupported LSP notification
+16:56:13.606838 [debug]: Ignoring unsupported LSP notification

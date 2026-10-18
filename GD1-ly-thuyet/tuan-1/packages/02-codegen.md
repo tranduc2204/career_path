@@ -181,7 +181,9 @@ dbt --quiet run-operation generate_source --args '{schema_name: sales}' > models
 |---|---|
 | `'codegen' is undefined` | Chưa `dbt deps` |
 | Output rỗng | Sai schema/database, sai hoa/thường, role không có quyền |
-| Lỗi parse `--args` | Lẫn nháy đơn/kép |
+| Lỗi parse `--args` (`is not valid YAML`) | Lẫn nháy đơn/kép, hoặc thiếu `}` đóng |
+| DuckDB: `schema "information_schema" does not exist` ... `from lab.information_schema.tables` | dbt_utils không có bản `duckdb__get_tables_by_pattern_sql`; vá bằng macro riêng + `dispatch` (xem lab bài tập, B2) |
+| DuckDB: `Could not set lock on file` | DBeaver/tiến trình khác đang mở file `.duckdb` → Disconnect rồi chạy lại |
 | `generate_base_model` báo source not found | Chưa lưu file sources |
 | `generate_model_yaml` không có cột | Model chưa được build |
 | File có dòng `Running with dbt=...` | Thiếu `--quiet` |

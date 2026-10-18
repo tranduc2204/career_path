@@ -20,7 +20,7 @@ dbt show --inline "describe raw.orders"
 dbt show --inline "select * from raw.orders" --limit 10
 dbt show --inline "select * from raw.products"
 dbt show --inline "select * from raw.customers"
-```
+``` 
 
 Trả lời (ghi ra giấy hoặc `lab/NOTES.md`):
 1. Khoá chính của mỗi bảng là gì? Kiểm tra bằng `count(*)` so với `count(distinct ...)`.
@@ -53,6 +53,16 @@ python scripts/check.py B2    # PASS sau khi có ít nhất 1 model dùng source
 ```
 
 **Ngoài thực tế:** source là nơi duy nhất trong project được phép nhắc tới tên schema/bảng thô. Khi team platform đổi schema, bạn chỉ sửa đúng file này.
+
+**Cách nhanh — sinh bằng codegen** (package `dbt-labs/codegen` đã có trong `packages.yml`):
+```bash
+dbt --quiet run-operation generate_source \
+  --args '{"schema_name": "raw", "database_name": "lab", "generate_columns": true, "exclude": "_lab%"}' \
+  > models/staging/_sources.yml
+```
+Sau đó tự thêm `description` cho từng bảng. Mở file kiểm tra lại: nếu lẫn dòng log thì xoá đi.
+
+Lưu ý riêng cho DuckDB: dbt_utils (mà codegen dùng bên dưới) không có bản cài đặt `duckdb__get_tables_by_pattern_sql`, nên bản mặc định query `lab.information_schema.tables` và lỗi. Lab đã vá sẵn bằng `macros/duckdb__get_tables_by_pattern_sql.sql` + khối `dispatch` cuối `dbt_project.yml` — đọc hai chỗ đó, đây là ví dụ thật của `adapter.dispatch` (bài J9).
 
 <details><summary>Gợi ý</summary>
 

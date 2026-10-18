@@ -1,0 +1,32 @@
+[0m23:30:24.567794 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x79105b1a5940>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x791059e17ed0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x791059e17b10>]}
+
+
+============================== 23:30:24.570129 | 0a680fad-ffdc-4a62-91f3-eae26d321f6c ==============================
+[0m23:30:24.570129 [info ] [MainThread]: Running with dbt=1.12.6
+[0m23:30:24.570517 [debug] [MainThread]: running dbt with arguments {'cache_selected_only': 'False', 'introspect': 'True', 'send_anonymous_usage_stats': 'True', 'static_parser': 'True', 'log_format': 'default', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'maximum_seed_size_mib': '1', 'partial_parse': 'True', 'invocation_command': 'dbt deps', 'warn_error': 'None', 'version_check': 'True', 'write_json': 'True', 'hints_enabled': 'True', 'quiet': 'False', 'profiles_dir': '/home/dustin/.dbt', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'indirect_selection': 'eager', 'debug': 'False', 'empty': 'None', 'target_path': 'None', 'log_path': 'logs', 'printer_width': '80', 'no_print': 'None', 'log_cache_events': 'False'}
+[0m23:30:24.571055 [error] [MainThread]: [[31mERROR[0m]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path /home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m23:30:24.571526 [debug] [MainThread]: Resource report: {"command_name": "deps", "command_success": false, "command_wall_clock_time": 0.06622278, "process_in_blocks": "7104", "process_kernel_time": 0.055951, "process_mem_max_rss": "108780", "process_out_blocks": "8", "process_user_time": 0.950179}
+[0m23:30:24.571859 [debug] [MainThread]: Command `dbt deps` failed at 23:30:24.571789 after 0.07 seconds
+[0m23:30:24.572094 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x791059c550f0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x791059ebb1d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x791059c32e00>]}
+[0m23:30:24.572335 [debug] [MainThread]: Flushing usage events
+[0m23:30:25.714332 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m23:30:31.215088 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x76b169ba5940>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x76b168817ed0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x76b168817b10>]}
+
+
+============================== 23:30:31.217300 | 875b6475-5db4-4914-bdb4-4fc6c7bbb7ee ==============================
+[0m23:30:31.217300 [info ] [MainThread]: Running with dbt=1.12.6
+[0m23:30:31.217665 [debug] [MainThread]: running dbt with arguments {'log_format': 'default', 'warn_error': 'None', 'write_json': 'True', 'indirect_selection': 'eager', 'profiles_dir': '/home/dustin/.dbt', 'quiet': 'False', 'maximum_seed_size_mib': '1', 'hints_enabled': 'True', 'use_colors': 'True', 'log_cache_events': 'False', 'version_check': 'True', 'log_path': 'logs', 'no_print': 'None', 'introspect': 'True', 'debug': 'False', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'use_experimental_parser': 'False', 'empty': 'None', 'printer_width': '80', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'fail_fast': 'False', 'static_parser': 'True', 'cache_selected_only': 'False', 'invocation_command': 'dbt deps'}
+[0m23:30:31.218134 [error] [MainThread]: [[31mERROR[0m]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path /home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m23:30:31.218593 [debug] [MainThread]: Resource report: {"command_name": "deps", "command_success": false, "command_wall_clock_time": 0.059696864, "process_in_blocks": "0", "process_kernel_time": 0.053029, "process_mem_max_rss": "108772", "process_out_blocks": "8", "process_user_time": 0.972534}
+[0m23:30:31.218901 [debug] [MainThread]: Command `dbt deps` failed at 23:30:31.218836 after 0.06 seconds
+[0m23:30:31.219141 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x76b1686550f0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x76b1688bb1d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x76b168632e00>]}
+[0m23:30:31.219382 [debug] [MainThread]: Flushing usage events
+[0m23:30:32.321608 [debug] [MainThread]: An error was encountered while trying to flush usage events

@@ -1,0 +1,4 @@
+{
+  "dbtLineage.manifestPath": "bai-tap-incremental-scd2-jinja/lab/target/manifest.json",
+  "dbtLineage.enableLiveParser": true
+}
