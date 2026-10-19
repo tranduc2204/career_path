@@ -13,7 +13,8 @@ renamed as (
         customer_id,
         order_date,
         status as  order_status,
-        amount_cents / 100 as amount,
+        {# amount_cents / 100 as amount, #}
+        {{ cents_to_dollars('amount_cents') }} as  amount,
         updated_at,
         _loaded_at
 

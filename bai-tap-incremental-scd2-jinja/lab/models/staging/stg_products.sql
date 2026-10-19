@@ -10,9 +10,9 @@ renamed as (
 
     select
         product_id,
-        nullif(trim(product_name),NULL) as product_name,
-        nullif(trim(category),NULL) as category,
-        nullif(list_price_cents / 100,NULL) as list_price,
+        {{ clean_string('product_name') }} as product_name,
+        {{ clean_string('category') }} as category,
+        nullif( {{ cents_to_dollars('list_price_cents') }},NULL) as list_price,
         _loaded_at
 
     from source

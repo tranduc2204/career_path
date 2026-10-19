@@ -13,9 +13,9 @@ renamed as (
         line_no,
         product_id,
         quantity,
-        unit_price_cents / 100 as unit_price,
+        {# unit_price_cents / 100 as unit_price, #}
+        {{ cents_to_dollars('unit_price_cents') }} as unit_price,
         _loaded_at
-
     from source
 
 )

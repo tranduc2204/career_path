@@ -10,10 +10,10 @@ renamed as (
 
     select
         customer_id,
-        nullif(trim(full_name),NULL) as full_name,
-        nullif(trim(lower(email)),NULL) as email,
-        nullif(trim(city),NULL) as city,
-        nullif(trim(tier),NULL) as tier,
+        {{ clean_string('full_name') }} as full_name,
+        {{ clean_string('email', lower = true) }} as email,
+        {{ clean_string('city') }} as city, 
+        {{ clean_string('tier') }} as tier, 
         updated_at,
         _loaded_at
 
