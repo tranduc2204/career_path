@@ -102,3 +102,6 @@
 16:55:36.241748 [info ]: Loading ~/.dbt/profiles.yml
 16:55:40.741850 [debug]: Ignoring unsupported LSP notification
 16:56:13.606838 [debug]: Ignoring unsupported LSP notification
+16:56:39.019313 [info ]: Loading ~/.dbt/profiles.yml
+16:56:48.877234 [info ]: Loading ~/.dbt/profiles.yml
+16:56:56.061144 [info ]: Loading ~/.dbt/profiles.yml
