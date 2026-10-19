@@ -2,5 +2,13 @@
   "dbtLineage.manifestPath": "bai-tap-incremental-scd2-jinja/lab/target/manifest.json",
   "dbtLineage.enableLiveParser": true,
   "python.defaultInterpreterPath": "${workspaceFolder}/bai-tap-incremental-scd2-jinja/.venv/bin/python",
-  "python.terminal.activateEnvironment": true
+  "python.terminal.activateEnvironment": true,
+
+  "dbt.dbtIntegration": "core",
+  "dbt.dbtPythonPathOverride": "/home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/.venv/bin/python",
+  "dbt.allowListFolders": ["bai-tap-incremental-scd2-jinja/lab"],
+  "files.associations": {
+    "**/bai-tap-incremental-scd2-jinja/lab/**/*.sql": "jinja-sql",
+    "**/bai-tap-incremental-scd2-jinja/lab/**/*.yml": "jinja-yaml"
+  }
 }

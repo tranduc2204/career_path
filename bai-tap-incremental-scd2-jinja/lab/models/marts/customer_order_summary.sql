@@ -13,3 +13,4 @@ sum (case when ord.order_status = '{{ s }}' then 1 else 0 end) as orders_{{s}}
 
 from {{ ref ('stg_orders') }}  ord 
 group by ord.customer_id
+

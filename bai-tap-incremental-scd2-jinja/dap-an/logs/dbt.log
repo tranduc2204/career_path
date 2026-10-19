@@ -10,3 +10,26 @@ Finished 'internal' successfully [4.8s]
 12:16:16.694676 [info ]: 
 ==================== Execution Summary =====================
 Finished 'internal' successfully [5.2s]
+==================== 2026-10-19T07:03:58.513657Z | 01a152f9-6530-7cd0-ba26-7a2bd205b27c ====================
+07:04:02.090217 [info ]: 
+==================== Execution Summary =====================
+Finished 'internal' successfully [3.6s]
+==================== 2026-10-19T12:45:52.069453Z | 01a15432-6844-7120-a502-e897e7d8a731 ====================
+12:45:54.643404 [info ]: 
+==================== Execution Summary =====================
+Finished 'internal' successfully [2.6s]
+[0m21:30:40.896775 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba5e1b50d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba5e42a120>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba5e1690d0>]}
+
+
+============================== 21:30:40.900160 | aadf0a4f-48fb-4d7d-870f-55c16183154c ==============================
+[0m21:30:40.900160 [info ] [MainThread]: Running with dbt=1.8.10
+[0m21:30:40.901011 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'debug': 'False', 'fail_fast': 'False', 'log_path': '/home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/dap-an/logs', 'version_check': 'True', 'profiles_dir': '/home/dustin/.dbt', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'introspect': 'True', 'static_parser': 'True', 'invocation_command': 'dbt ', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'send_anonymous_usage_stats': 'True'}
+[0m21:30:40.901494 [info ] [MainThread]: This version of dbt is deprecated and no longer receives regular patches, including for known bugs. We recommend upgrading to a newer supported version of dbt: https://docs.getdbt.com/docs/dbt-versions
+[0m21:30:40.901960 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'deprecated_version_invocation', 'label': 'aadf0a4f-48fb-4d7d-870f-55c16183154c', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba6275fc20>]}
+[0m21:30:41.008126 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'aadf0a4f-48fb-4d7d-870f-55c16183154c', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba5e72d310>]}
+[0m21:30:41.019859 [info ] [MainThread]: Warning: No packages were found in packages.yml
+[0m21:30:41.020723 [info ] [MainThread]: Warning: No packages were found in packages.yml
+[0m21:30:41.026673 [debug] [MainThread]: Resource report: {"command_name": "deps", "command_success": true, "command_wall_clock_time": 0.18852384, "process_in_blocks": "48", "process_kernel_time": 0.095012, "process_mem_max_rss": "149500", "process_out_blocks": "8", "process_user_time": 1.712231}
+[0m21:30:41.027271 [debug] [MainThread]: Command `cli deps` succeeded at 21:30:41.027155 after 0.19 seconds
+[0m21:30:41.027647 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba6275fc20>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba5e4f5040>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba5dfc6030>]}
+[0m21:30:41.028058 [debug] [MainThread]: Flushing usage events
