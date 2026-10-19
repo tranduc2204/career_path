@@ -6,3 +6,5 @@
     {%- endif -%}
     nullif({{ expr }}, '')
 {%- endmacro %}
+
+
