@@ -128,6 +128,24 @@ AdventureWorks có cột `ModifiedDate` ở hầu hết bảng → dùng làm wa
 ## Câu hỏi tự kiểm tra
 
 1. Ba điều kiện nào làm `is_incremental()` trả `True`?
+3 điều kiện là 
+```
+{% macro is_incremental() %}
+  {% if not execute %}{{ return(False) }}{% endif %}
+  {% set relation = adapter.get_relation(this.database, this.schema, this.table) %}
+  {{ return(
+       relation is not none                              -- (1) bảng đích đã tồn tại
+       and relation.type == 'table'                       --     và là TABLE (không phải view)
+       and model.config.materialized == 'incremental'     -- (2) model đang cấu hình incremental
+       and not should_full_refresh()                      -- (3) không chạy --full-refresh
+  ) }}
+{% endmacro %}
+
+
+![alt text](image.png)
+
+```
+![alt text](image-1.png)
 2. Vì sao `append` không idempotent?
 3. Khi nào chọn `delete+insert` thay `merge`?
 4. `on_schema_change` có những giá trị nào, mặc định là gì?

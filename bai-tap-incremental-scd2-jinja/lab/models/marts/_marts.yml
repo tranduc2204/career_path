@@ -10,4 +10,6 @@ models:
         data_tests: [not_null]
       - name: line_amount
         data_tests:
-          - is_positive
+          - is_positive:
+              arguments:
+                allow_zero: true

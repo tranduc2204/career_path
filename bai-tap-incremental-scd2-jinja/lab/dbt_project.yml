@@ -24,6 +24,7 @@ models:
       +materialized: view
     marts:
       +materialized: table
+      +schema: marts
 
 # dbt_utils tìm macro trong project `lab` trước (để dùng bản vá duckdb__ ở macros/,
 # vì dbt_utils không có bản cài đặt riêng cho DuckDB của get_tables_by_pattern_sql)
