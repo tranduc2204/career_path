@@ -16,4 +16,4 @@ with batch as (
 
 select event_id, user_id, event_type, event_ts, _loaded_at
 from batch
-qualify row_number() over (partition by event_id order by _loaded_at) = 1
+qualify row_number() over (partition by event_id order by _loaded_at desc) = 1
