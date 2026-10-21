@@ -13,3 +13,14 @@ models:
           - is_positive:
               arguments:
                 allow_zero: true
+  - name: fct_orders
+    description: "fact order in model mart"
+    columns:
+      - name: amount
+        data_tests:
+          - is_positive
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique
+
