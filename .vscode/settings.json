@@ -10,5 +10,6 @@
   "files.associations": {
     "**/bai-tap-incremental-scd2-jinja/lab/**/*.sql": "jinja-sql",
     "**/bai-tap-incremental-scd2-jinja/lab/**/*.yml": "jinja-yaml"
-  }
+  },
+  "dbt.perspectiveTheme": "Vintage"
 }

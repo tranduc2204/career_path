@@ -1,6 +1,6 @@
 name: lab
 version: "1.0.0"
-config-version: 2
+config-version: 2 
 profile: lab
 
 model-paths: ["models"]
@@ -17,7 +17,9 @@ vars:
   lookback_days: 3
   # Danh sách trạng thái đơn hàng (bài J3)
   order_statuses: ["placed", "shipped", "delivered", "cancelled"]
-
+  
+  # quy tắc doanh thu
+  non_revenue_statuses: ["cancelled", "returned"]
 models:
   lab:
     staging:
