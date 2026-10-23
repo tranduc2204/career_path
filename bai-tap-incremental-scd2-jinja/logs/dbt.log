@@ -86,3 +86,19 @@ Runtime Error
 [0m09:45:01.991767 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x766809148fc0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7668093b30b0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x766809322f10>]}
 [0m09:45:01.992069 [debug] [MainThread]: Flushing usage events
 [0m09:45:03.208257 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m14:11:06.294986 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7262214a9940>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x72621ff73ed0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x72621ff73b10>]}
+
+
+============================== 14:11:06.297523 | 5870ac23-0e0c-4b09-abef-4a654f0ca4f8 ==============================
+[0m14:11:06.297523 [info ] [MainThread]: Running with dbt=1.12.6
+[0m14:11:06.297995 [debug] [MainThread]: running dbt with arguments {'empty': 'None', 'hints_enabled': 'True', 'log_path': 'logs', 'introspect': 'True', 'partial_parse': 'True', 'log_format': 'default', 'static_parser': 'True', 'fail_fast': 'False', 'indirect_selection': 'eager', 'maximum_seed_size_mib': '1', 'invocation_command': 'dbt show --select stg_events', 'quiet': 'False', 'target_path': 'None', 'version_check': 'True', 'printer_width': '80', 'debug': 'False', 'no_print': 'None', 'write_json': 'True', 'use_experimental_parser': 'False', 'log_cache_events': 'False', 'cache_selected_only': 'False', 'send_anonymous_usage_stats': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'warn_error': 'None', 'use_colors': 'True', 'profiles_dir': '/home/dustin/.dbt'}
+[0m14:11:06.298443 [error] [MainThread]: [[31mERROR[0m]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path /home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m14:11:06.298956 [debug] [MainThread]: Resource report: {"command_name": "show", "command_success": false, "command_wall_clock_time": 0.06682116, "process_in_blocks": "288", "process_kernel_time": 0.050944, "process_mem_max_rss": "109052", "process_out_blocks": "8", "process_user_time": 0.965944}
+[0m14:11:06.299349 [debug] [MainThread]: Command `dbt show` failed at 14:11:06.299264 after 0.07 seconds
+[0m14:11:06.299703 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x72621ff95cd0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x72622011ef90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x72621ffc4c00>]}
+[0m14:11:06.300064 [debug] [MainThread]: Flushing usage events
+[0m14:11:07.406805 [debug] [MainThread]: An error was encountered while trying to flush usage events
