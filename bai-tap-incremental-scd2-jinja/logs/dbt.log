@@ -102,3 +102,59 @@ Runtime Error
 [0m14:11:06.299703 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x72621ff95cd0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x72622011ef90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x72621ffc4c00>]}
 [0m14:11:06.300064 [debug] [MainThread]: Flushing usage events
 [0m14:11:07.406805 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m21:16:14.589459 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7410198a9940>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x74101837bed0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x74101837bb10>]}
+
+
+============================== 21:16:14.602924 | 110d7ba7-2dc2-4b47-9516-73faccb69078 ==============================
+[0m21:16:14.602924 [info ] [MainThread]: Running with dbt=1.12.6
+[0m21:16:14.604481 [debug] [MainThread]: running dbt with arguments {'debug': 'False', 'hints_enabled': 'True', 'cache_selected_only': 'False', 'printer_width': '80', 'no_print': 'None', 'profiles_dir': '/home/dustin/.dbt', 'introspect': 'True', 'log_cache_events': 'False', 'write_json': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'invocation_command': 'dbt build --select fct_orders', 'use_experimental_parser': 'False', 'version_check': 'True', 'log_path': 'logs', 'maximum_seed_size_mib': '1', 'indirect_selection': 'eager', 'static_parser': 'True', 'fail_fast': 'False', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'log_format': 'default', 'use_colors': 'True', 'target_path': 'None', 'warn_error': 'None', 'partial_parse': 'True', 'empty': 'False'}
+[0m21:16:14.605891 [error] [MainThread]: [[31mERROR[0m]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path /home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m21:16:14.607530 [debug] [MainThread]: Resource report: {"command_name": "build", "command_success": false, "command_wall_clock_time": 0.1953964, "process_in_blocks": "40128", "process_kernel_time": 0.243105, "process_mem_max_rss": "109244", "process_out_blocks": "8", "process_user_time": 2.98055}
+[0m21:16:14.608688 [debug] [MainThread]: Command `dbt build` failed at 21:16:14.608451 after 0.20 seconds
+[0m21:16:14.609610 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x741018395cd0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x74101851ef90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7410183c4c00>]}
+[0m21:16:14.610614 [debug] [MainThread]: Flushing usage events
+[0m21:16:16.046376 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m21:16:40.506442 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x71235d5a9940>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x71235c217ed0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x71235c217b10>]}
+
+
+============================== 21:16:40.512897 | b3c16c93-2295-4a7f-8451-16572a4f055a ==============================
+[0m21:16:40.512897 [info ] [MainThread]: Running with dbt=1.12.6
+[0m21:16:40.514001 [debug] [MainThread]: running dbt with arguments {'empty': 'None', 'log_cache_events': 'False', 'use_colors': 'True', 'target_path': 'None', 'version_check': 'True', 'send_anonymous_usage_stats': 'True', 'log_format': 'default', 'warn_error': 'None', 'use_experimental_parser': 'False', 'static_parser': 'True', 'printer_width': '80', 'invocation_command': 'dbt debug', 'profiles_dir': '/home/dustin/.dbt', 'introspect': 'True', 'maximum_seed_size_mib': '1', 'cache_selected_only': 'False', 'indirect_selection': 'eager', 'fail_fast': 'False', 'quiet': 'False', 'hints_enabled': 'True', 'write_json': 'True', 'debug': 'False', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'partial_parse': 'True', 'no_print': 'None', 'log_path': 'logs'}
+[0m21:16:40.540544 [info ] [MainThread]: dbt version: 1.12.6
+[0m21:16:40.541470 [info ] [MainThread]: python version: 3.13.15
+[0m21:16:40.542134 [info ] [MainThread]: python path: /home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/.venv/bin/python
+[0m21:16:40.542749 [info ] [MainThread]: os info: Linux-7.0.0-38-generic-x86_64-with-glibc2.39
+[0m21:16:40.554654 [info ] [MainThread]: Error importing adapter: No module named 'dbt.adapters.snowflake'
+[0m21:16:40.555975 [info ] [MainThread]: Using profiles dir at /home/dustin/.dbt
+[0m21:16:40.556755 [info ] [MainThread]: Using profiles.yml file at /home/dustin/.dbt/profiles.yml
+[0m21:16:40.557416 [info ] [MainThread]: Using dbt_project.yml file at /home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/dbt_project.yml
+[0m21:16:40.558036 [info ] [MainThread]: Configuration:
+[0m21:16:40.558616 [info ] [MainThread]:   profiles.yml file [[31mERROR invalid[0m]
+[0m21:16:40.559153 [info ] [MainThread]:   dbt_project.yml file [[31mERROR not found[0m]
+[0m21:16:40.559680 [info ] [MainThread]: Required dependencies:
+[0m21:16:40.560289 [debug] [MainThread]: Executing "git --help"
+[0m21:16:40.564474 [debug] [MainThread]: STDOUT: "b"usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]\n           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]\n           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]\n           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]\n           [--config-env=<name>=<envvar>] <command> [<args>]\n\nThese are common Git commands used in various situations:\n\nstart a working area (see also: git help tutorial)\n   clone     Clone a repository into a new directory\n   init      Create an empty Git repository or reinitialize an existing one\n\nwork on the current change (see also: git help everyday)\n   add       Add file contents to the index\n   mv        Move or rename a file, a directory, or a symlink\n   restore   Restore working tree files\n   rm        Remove files from the working tree and from the index\n\nexamine the history and state (see also: git help revisions)\n   bisect    Use binary search to find the commit that introduced a bug\n   diff      Show changes between commits, commit and working tree, etc\n   grep      Print lines matching a pattern\n   log       Show commit logs\n   show      Show various types of objects\n   status    Show the working tree status\n\ngrow, mark and tweak your common history\n   branch    List, create, or delete branches\n   commit    Record changes to the repository\n   merge     Join two or more development histories together\n   rebase    Reapply commits on top of another base tip\n   reset     Reset current HEAD to the specified state\n   switch    Switch branches\n   tag       Create, list, delete or verify a tag object signed with GPG\n\ncollaborate (see also: git help workflows)\n   fetch     Download objects and refs from another repository\n   pull      Fetch from and integrate with another repository or a local branch\n   push      Update remote refs along with associated objects\n\n'git help -a' and 'git help -g' list available subcommands and some\nconcept guides. See 'git help <command>' or 'git help <concept>'\nto read about a specific subcommand or concept.\nSee 'git help git' for an overview of the system.\n""
+[0m21:16:40.565482 [debug] [MainThread]: STDERR: "b''"
+[0m21:16:40.566193 [info ] [MainThread]:  - git [[32mOK found[0m]
+
+[0m21:16:40.566887 [info ] [MainThread]: Connection test skipped since no profile was found
+[0m21:16:40.567668 [info ] [MainThread]: [31m2 checks failed:[0m
+[0m21:16:40.568315 [info ] [MainThread]: Could not load dbt_project.yml
+Profile loading failed for the following reason:
+Runtime Error
+  Credentials in profile "dbt_project", target "dev" invalid: Runtime Error
+    Could not find adapter type snowflake!
+
+
+[0m21:16:40.568922 [info ] [MainThread]: Project loading failed for the following reason:
+ project path </home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/dbt_project.yml> not found
+
+[0m21:16:40.570337 [debug] [MainThread]: Resource report: {"command_name": "debug", "command_success": false, "command_wall_clock_time": 0.23214783, "process_in_blocks": "232", "process_kernel_time": 0.140065, "process_mem_max_rss": "109052", "process_out_blocks": "16", "process_user_time": 3.023404}
+[0m21:16:40.571924 [debug] [MainThread]: Command `dbt debug` failed at 21:16:40.571616 after 0.23 seconds
+[0m21:16:40.572983 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x71235c05b490>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x71235c0c7d10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x71235c0c2580>]}
+[0m21:16:40.573953 [debug] [MainThread]: Flushing usage events
+[0m21:16:41.955042 [debug] [MainThread]: An error was encountered while trying to flush usage events
