@@ -170,7 +170,7 @@ python scripts/check.py I6       # PASS
     event_time='event_ts',
     batch_size='day',
     begin='2025-12-29',
-    lookback=2
+    lookback=2 
 ) }}
 ```
 - Không viết `is_incremental()`. Vẫn dedupe sự kiện trong model.

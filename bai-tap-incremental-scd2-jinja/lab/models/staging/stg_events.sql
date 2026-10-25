@@ -1,4 +1,4 @@
-
+{{ config(event_time='event_ts') }}
 
 with source as (
 

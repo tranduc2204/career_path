@@ -51,7 +51,7 @@ dbt show --inline "select customer_id, city, dbt_valid_from, dbt_valid_to from {
 2. Hệ quả: bạn có join được "giá sản phẩm tại ngày đặt đơn" từ `snap_products` không? Trong production (snapshot chạy mỗi đêm), sai số là bao nhiêu?
 3. Giá quay về giá cũ vẫn tạo phiên bản mới — đúng hay sai về mặt nghiệp vụ?
 
----
+--- 
 
 ## S3 ⭐⭐⭐ Bẫy `updated_at`
 
