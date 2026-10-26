@@ -163,5 +163,6 @@ Mô hình vault cho phần bán hàng (chuẩn bị cho [6.3](03-automate-dv.md)
 ## Tài liệu
 
 - *Building a Scalable Data Warehouse with Data Vault 2.0* — chương 4 (Data Vault 2.0 modeling), chương 5 (Intermediate: satellites đặc biệt, link đặc biệt)
-- AutomateDV — mô tả từng loại bảng: https://automate-dv.readthedocs.io/en/latest/tutorial/
+- AutomateDV docs (mục Tutorial mô tả từng loại bảng): https://automate-dv.readthedocs.io/en/latest/
+- AutomateDV trên dbt Hub: https://hub.getdbt.com/Datavault-UK/automate_dv/latest/
 - Lab: [V1–V6](../../bai-tap-kimball-data-vault/bai-tap/04-data-vault-raw-vault.md)
