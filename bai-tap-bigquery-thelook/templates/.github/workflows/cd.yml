@@ -1,0 +1,92 @@
+# CD: merge vào main → deploy prod (chỉ phần thay đổi); 06:00 sáng mỗi ngày → build toàn bộ.
+# Chạy trong GitHub Environment "production": chỉ nhánh main được dùng, và chỉ job trong environment này
+# mới đổi được token sang service account prod (xem scripts/setup_gcp.sh).
+name: CD
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 23 * * *"            # 23:00 UTC = 06:00 giờ Việt Nam
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false         # KHÔNG huỷ một lần deploy đang chạy dở
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DBT_PROFILES_DIR: .
+  DBT_TARGET: prod
+  GCP_PROJECT_PROD: ${{ vars.GCP_PROJECT_PROD }}
+  STATE_BUCKET: ${{ vars.STATE_BUCKET }}
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Cài Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Cài dbt
+        run: pip install -r requirements.txt
+
+      - name: Xác thực Google Cloud (service account prod)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.SA_PROD }}
+
+      - name: Cài gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: Lấy manifest prod lần deploy trước
+        id: state
+        run: |
+          mkdir -p prod-state
+          if gcloud storage cp "gs://${STATE_BUCKET}/prod/manifest.json" prod-state/manifest.json; then
+            echo "has_state=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_state=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HAS_STATE: ${{ steps.state.outputs.has_state }}
+        run: |
+          if [ "${EVENT_NAME}" = "push" ] && [ "${HAS_STATE}" = "true" ]; then
+            echo "Merge vào main: chỉ build phần thay đổi"
+            dbt build --select state:modified+ --state prod-state
+          else
+            echo "Lịch hằng ngày / chạy tay / lần đầu: build toàn bộ"
+            dbt build
+          fi
+
+      - name: Lưu trạng thái prod mới (chỉ khi deploy thành công)
+        run: gcloud storage cp target/manifest.json "gs://${STATE_BUCKET}/prod/manifest.json"
+
+      - name: Lưu artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dbt-prod-${{ github.run_id }}
+          path: |
+            target/run_results.json
+            target/manifest.json
+            logs/dbt.log
+          if-no-files-found: ignore

@@ -1,0 +1,93 @@
+# CI cho mỗi Pull Request vào main:
+#   lint các model đã đổi → build + test phần thay đổi (state:modified+) vào dataset riêng của PR,
+#   model không đổi đọc thẳng bảng prod (--defer).
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true          # PR có commit mới → huỷ lần chạy cũ
+
+permissions:
+  contents: read
+  id-token: write                   # bắt buộc để lấy token OIDC cho Workload Identity Federation
+
+env:
+  DBT_PROFILES_DIR: .
+  DBT_TARGET: ci
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  GCP_PROJECT_NONPROD: ${{ vars.GCP_PROJECT_NONPROD }}
+  STATE_BUCKET: ${{ vars.STATE_BUCKET }}
+
+jobs:
+  dbt-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0            # cần lịch sử để biết file nào đổi so với nhánh đích
+
+      - name: Cài Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Cài dbt và sqlfluff
+        run: pip install -r requirements.txt
+
+      - name: Xác thực Google Cloud (WIF, không dùng key)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.SA_CI }}
+
+      - name: Cài gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: Lint các model SQL đã đổi
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git diff --name-only --diff-filter=d "origin/${BASE_REF}...HEAD" -- 'models/**/*.sql' \
+            | xargs -r sqlfluff lint
+
+      - name: Lấy manifest prod
+        id: state
+        run: |
+          mkdir -p prod-state
+          if gcloud storage cp "gs://${STATE_BUCKET}/prod/manifest.json" prod-state/manifest.json; then
+            echo "has_state=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Chưa có manifest prod (lần deploy đầu chưa chạy): build toàn bộ"
+            echo "has_state=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: dbt build (slim CI)
+        env:
+          HAS_STATE: ${{ steps.state.outputs.has_state }}
+        run: |
+          if [ "${HAS_STATE}" = "true" ]; then
+            dbt build --select state:modified+ --defer --state prod-state
+          else
+            dbt build
+          fi
+
+      - name: Lưu artifacts để xem lại
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dbt-ci-pr-${{ github.event.pull_request.number }}
+          path: |
+            target/run_results.json
+            target/manifest.json
+            logs/dbt.log
+          if-no-files-found: ignore

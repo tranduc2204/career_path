@@ -1,0 +1,22 @@
+# Dữ liệu public của Google. Kiểm chứng cột bằng INFORMATION_SCHEMA.COLUMNS (xem huong-dan/03),
+# rồi sinh phần columns bằng codegen nếu muốn.
+sources:
+  - name: thelook
+    database: bigquery-public-data
+    schema: thelook_ecommerce
+    description: Shop thời trang giả lập của team Looker. Dữ liệu được cập nhật liên tục.
+    tables:
+      - name: users
+        description: 1 dòng = 1 khách hàng.
+      - name: orders
+        description: 1 dòng = 1 đơn hàng.
+      - name: order_items
+        description: 1 dòng = 1 món hàng trong đơn.
+      - name: products
+        description: 1 dòng = 1 sản phẩm.
+      - name: inventory_items
+        description: 1 dòng = 1 đơn vị hàng trong kho (có thời điểm nhập và thời điểm bán).
+      - name: distribution_centers
+        description: 1 dòng = 1 trung tâm phân phối.
+      - name: events
+        description: 1 dòng = 1 sự kiện web. Bảng lớn nhất.

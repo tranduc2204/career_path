@@ -1,0 +1,46 @@
+name: lab
+version: "1.0.0"
+config-version: 2
+profile: lab
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # automate_dv: thuật toán băm cho hash key và hashdiff (MD5 → chuỗi hex 32 ký tự trên DuckDB)
+  hash: MD5
+
+models:
+  lab:
+    staging:                 # dựng sẵn: chỉ "hard rules" (đổi tên, ép kiểu, trim, chuẩn hoá chữ hoa/thường)
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:                   # tuần 4: Kimball
+      +materialized: table
+      +schema: marts
+    raw_vault:               # tuần 6: Data Vault — chỉ thêm (insert-only), không bao giờ sửa/xoá
+      +materialized: incremental
+      +schema: raw_vault
+      stage:
+        +materialized: view
+    business_vault:
+      +materialized: table
+      +schema: business_vault
+    information_marts:       # star schema dựng lại từ vault
+      +materialized: table
+      +schema: information_marts
+
+# automate_dv chưa hỗ trợ DuckDB. Khối dispatch này bảo dbt tìm macro `duckdb__*` trong project `lab`
+# (file macros/automate_dv_duckdb.sql) trước khi tìm trong package. Đây là cùng kỹ thuật adapter.dispatch ở GĐ1.
+dispatch:
+  - macro_namespace: automate_dv
+    search_order: ["lab", "automate_dv"]

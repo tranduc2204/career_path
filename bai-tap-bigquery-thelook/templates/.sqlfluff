@@ -1,0 +1,18 @@
+[sqlfluff]
+templater = dbt
+dialect = bigquery
+max_line_length = 120
+
+[sqlfluff:templater:dbt]
+project_dir = .
+profiles_dir = .
+# target lấy theo profiles.yml (biến DBT_TARGET), CI đặt DBT_TARGET=ci
+
+[sqlfluff:indentation]
+tab_space_size = 4
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:layout.commas]
+line_position = trailing

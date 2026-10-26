@@ -1,0 +1,55 @@
+models:
+  - name: dim_date
+    columns:
+      - name: date_key
+        data_tests: [unique, not_null]
+  - name: dim_month
+    columns:
+      - name: month_key
+        data_tests: [unique, not_null]
+  - name: dim_product
+    columns:
+      - name: product_key
+        data_tests: [unique, not_null]
+      - name: sku
+        data_tests: [unique]
+  - name: dim_category_l1
+    columns:
+      - name: category_l1_key
+        data_tests: [unique, not_null]
+  - name: dim_location
+    columns:
+      - name: location_key
+        data_tests: [unique, not_null]
+  - name: dim_voucher
+    columns:
+      - name: voucher_key
+        data_tests: [unique, not_null]
+  - name: dim_promotion
+    columns:
+      - name: promotion_key
+        data_tests: [unique, not_null]
+  - name: dim_order_profile
+    columns:
+      - name: order_profile_key
+        data_tests: [unique, not_null]
+  - name: dim_customer
+    description: "SCD2. Grain: 1 phiên bản khách hàng."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [customer_code, valid_from]
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: valid_from
+            upper_bound_column: valid_to
+            partition_by: customer_code
+            gaps: not_allowed
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+  - name: bridge_category_hierarchy
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [ancestor_category_code, descendant_category_code]

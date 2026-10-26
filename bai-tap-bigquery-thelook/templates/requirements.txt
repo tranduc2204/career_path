@@ -1,0 +1,5 @@
+# Ghim theo major version: dbt Core v1 (khớp các lab và tài liệu GĐ1, GĐ2)
+dbt-core>=1.10,<2
+dbt-bigquery>=1.10,<2
+sqlfluff>=4,<5
+sqlfluff-templater-dbt>=4,<5

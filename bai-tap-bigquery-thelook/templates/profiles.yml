@@ -1,0 +1,40 @@
+# profiles.yml đặt NGAY TRONG repo (export DBT_PROFILES_DIR=.). Không chứa bí mật nào:
+# mọi giá trị riêng đọc từ biến môi trường, xác thực bằng Application Default Credentials (ADC).
+#   - Máy dev:        gcloud auth application-default login
+#   - GitHub Actions: google-github-actions/auth (Workload Identity Federation) tự cấp credential
+thelook:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_NONPROD') }}"
+      dataset: "dbt_{{ env_var('DBT_USER', 'dev') }}"
+      location: US                          # cùng location với bigquery-public-data.thelook_ecommerce
+      threads: 8
+      priority: interactive
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      maximum_bytes_billed: 5000000000      # 5 GB / query: vượt là bị BigQuery từ chối
+
+    ci:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_NONPROD') }}"
+      dataset: "ci_pr_{{ env_var('PR_NUMBER', 'manual') }}"
+      location: US
+      threads: 8
+      job_execution_timeout_seconds: 600
+      job_retries: 1
+      maximum_bytes_billed: 5000000000
+
+    prod:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_PROD') }}"
+      dataset: prod                         # dataset mặc định; model có +schema vào dataset riêng (xem macros/generate_schema_name.sql)
+      location: US
+      threads: 8
+      job_execution_timeout_seconds: 1200
+      job_retries: 2
+      maximum_bytes_billed: 50000000000

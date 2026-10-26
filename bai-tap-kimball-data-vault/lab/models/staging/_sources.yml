@@ -1,0 +1,50 @@
+# 5 hệ thống nguồn, mỗi hệ thống một schema (giống cách Fivetran/Airbyte đặt mỗi connector một schema).
+# Chú ý CÁCH NẠP của từng bảng: nó quyết định cách bạn dựng dimension, fact và vault.
+sources:
+  - name: crm
+    description: Hệ thống chăm sóc khách hàng. Xuất FILE FULL mỗi cuối ngày, kho nối thêm (append-only).
+    tables:
+      - name: customers
+        description: Mỗi file ngày có đủ mọi khách CRM đang quản lý. Không có updated_at → so 2 file liên tiếp để biết đổi gì.
+      - name: customer_phones
+        description: Số điện thoại của khách, một khách có thể có nhiều số cùng lúc (multi-active). Cũng là file full mỗi ngày.
+
+  - name: shop
+    description: Backend website + app, được đồng bộ dạng BẢNG TRẠNG THÁI HIỆN TẠI (dòng bị ghi đè khi đổi).
+    tables:
+      - name: orders
+        description: Đầu đơn online. Trạng thái placed → paid → (cancelled | returned). _loaded_at đổi khi dòng đổi.
+      - name: order_lines
+        description: Dòng đơn. Không bao giờ sửa sau khi tạo.
+      - name: order_vouchers
+        description: Voucher áp vào đơn. Một đơn có thể dùng 0–3 voucher (thuộc tính nhiều giá trị).
+
+  - name: pos
+    description: Máy bán hàng tại 2 cửa hàng. ĐỒNG BỘ 2 NGÀY MỘT LẦN nên dữ liệu về trễ. Append-only.
+    tables:
+      - name: sales
+        description: Mỗi dòng là một dòng hoá đơn. customer_code rỗng = khách vãng lai. SKU viết thường.
+
+  - name: wms
+    description: Hệ thống kho vận. Log sự kiện, append-only, có sự kiện về trễ và về sai thứ tự.
+    tables:
+      - name: shipment_events
+        description: Sự kiện của đơn online - packed, shipped, delivery_failed, delivered, returned.
+      - name: stock_movements
+        description: Biến động tồn kho theo ngày (opening, ship, return, receipt, adjustment). Có điều chỉnh lùi ngày.
+
+  - name: erp
+    description: Dữ liệu chủ và kế hoạch. Bảng trạng thái hiện tại (ghi đè).
+    tables:
+      - name: products
+        description: Sản phẩm. Không có updated_at; _loaded_at chỉ đổi khi dòng đổi.
+      - name: categories
+        description: Cây danh mục không đều (nhánh sâu 1, 2 hoặc 3 cấp). parent_code null = danh mục cấp 1.
+      - name: promotions
+        description: Chương trình khuyến mãi theo sản phẩm và khoảng ngày.
+      - name: vouchers
+        description: Danh mục voucher.
+      - name: locations
+        description: 2 kho (warehouse) và 2 cửa hàng (store).
+      - name: sales_targets
+        description: Chỉ tiêu doanh thu theo THÁNG × DANH MỤC CẤP 1 (grain khác hẳn bảng bán hàng).

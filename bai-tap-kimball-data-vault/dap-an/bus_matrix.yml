@@ -1,0 +1,39 @@
+# Enterprise bus matrix của Mây Shop: hàng = quy trình nghiệp vụ (mỗi quy trình = 1 fact), cột = dimension dùng chung.
+# Dimension xuất hiện ở NHIỀU quy trình chính là conformed dimension: phải dùng chung 1 model, không sao chép.
+#
+#                         | date | month | customer | product | category_l1 | location | order_profile | promotion
+# Bán hàng                |  X   |       |    X     |    X    |             |    X     |       X       |
+# Thực hiện đơn online    |  X   |       |    X     |         |             |    X     |       X       |
+# Tồn kho cuối ngày       |  X   |       |          |    X    |             |    X     |               |
+# Khuyến mãi áp dụng      |  X   |       |          |    X    |             |          |               |     X
+# Chỉ tiêu doanh thu      |      |   X   |          |         |      X      |          |               |
+bus_matrix:
+  - process: Bán hàng (online + cửa hàng)
+    fact: fct_sales
+    type: transaction
+    grain: 1 dòng đơn online hoặc 1 dòng hoá đơn POS đã bán (không gồm đơn huỷ)
+    dimensions: [dim_date, dim_customer, dim_product, dim_location, dim_order_profile]
+
+  - process: Thực hiện đơn online (đặt → thanh toán → đóng gói → giao → trả)
+    fact: fct_order_fulfillment
+    type: accumulating_snapshot
+    grain: 1 đơn online, cập nhật mỗi khi đơn qua mốc mới
+    dimensions: [dim_date, dim_customer, dim_location, dim_order_profile]
+
+  - process: Tồn kho cuối ngày
+    fact: fct_inventory_daily
+    type: periodic_snapshot
+    grain: 1 sản phẩm × 1 kho × 1 ngày (dày đặc)
+    dimensions: [dim_date, dim_product, dim_location]
+
+  - process: Khuyến mãi áp dụng
+    fact: fct_promotion_coverage
+    type: factless
+    grain: 1 chương trình × 1 sản phẩm × 1 ngày được khuyến mãi
+    dimensions: [dim_date, dim_product, dim_promotion]
+
+  - process: Chỉ tiêu doanh thu
+    fact: fct_sales_target
+    type: periodic_snapshot
+    grain: 1 tháng × 1 danh mục cấp 1
+    dimensions: [dim_month, dim_category_l1]

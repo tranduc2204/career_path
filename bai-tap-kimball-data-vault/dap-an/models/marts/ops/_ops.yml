@@ -1,0 +1,26 @@
+models:
+  - name: fct_order_fulfillment
+    description: "Accumulating snapshot. Grain: 1 đơn online."
+    columns:
+      - name: order_number
+        data_tests: [unique, not_null]
+      - name: order_date_key
+        data_tests: &date_fk
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_date'), field: date_key}
+      - {name: paid_date_key, data_tests: *date_fk}
+      - {name: packed_date_key, data_tests: *date_fk}
+      - {name: shipped_date_key, data_tests: *date_fk}
+      - {name: delivered_date_key, data_tests: *date_fk}
+      - {name: returned_date_key, data_tests: *date_fk}
+      - {name: cancelled_date_key, data_tests: *date_fk}
+  - name: fct_inventory_daily
+    description: "Periodic snapshot. Grain: 1 sản phẩm × 1 kho × 1 ngày."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [snapshot_date_key, product_key, warehouse_location_key]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "quantity_on_hand >= 0"

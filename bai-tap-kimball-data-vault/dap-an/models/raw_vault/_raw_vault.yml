@@ -1,0 +1,52 @@
+# Test "sức khoẻ" của raw vault. Test quan trọng nhất: satellite không được có 2 dòng cùng (hash key, LOAD_DATETIME).
+models:
+  - name: hub_customer
+    columns: [{name: CUSTOMER_HK, data_tests: [unique, not_null]}, {name: customer_code, data_tests: [unique]}]
+  - name: hub_product
+    columns: [{name: PRODUCT_HK, data_tests: [unique, not_null]}]
+  - name: hub_order
+    columns: [{name: ORDER_HK, data_tests: [unique, not_null]}]
+  - name: hub_voucher
+    columns: [{name: VOUCHER_HK, data_tests: [unique, not_null]}]
+  - name: hub_category
+    columns: [{name: CATEGORY_HK, data_tests: [unique, not_null]}]
+  - name: link_order_customer
+    columns:
+      - {name: LINK_ORDER_CUSTOMER_HK, data_tests: [unique, not_null]}
+      - name: CUSTOMER_HK
+        data_tests:
+          - relationships:
+              arguments: {to: ref('hub_customer'), field: CUSTOMER_HK}
+  - name: link_product_category
+    columns: [{name: LINK_PRODUCT_CATEGORY_HK, data_tests: [unique, not_null]}]
+  - name: nh_link_order_line
+    columns: [{name: ORDER_LINE_HK, data_tests: [unique, not_null]}]
+  - name: nh_link_order_voucher
+    columns: [{name: ORDER_VOUCHER_HK, data_tests: [unique, not_null]}]
+  - name: sat_customer_crm_profile
+    data_tests: &sat_grain
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [CUSTOMER_HK, LOAD_DATETIME]
+  - name: sat_customer_crm_status
+    data_tests: *sat_grain
+  - name: sat_order_shop
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [ORDER_HK, LOAD_DATETIME]
+  - name: sat_order_pos
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [ORDER_HK, LOAD_DATETIME]
+  - name: sat_product_erp
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [PRODUCT_HK, LOAD_DATETIME]
+  - name: ma_sat_customer_crm_phones
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [CUSTOMER_HK, phone_type, LOAD_DATETIME]

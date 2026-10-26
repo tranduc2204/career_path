@@ -1,0 +1,7 @@
+models:
+  - name: fct_promotion_coverage
+    description: "Factless coverage. Grain: 1 chương trình × 1 sản phẩm × 1 ngày."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [promotion_key, product_key, date_key]

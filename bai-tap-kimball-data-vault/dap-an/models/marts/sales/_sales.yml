@@ -1,0 +1,40 @@
+models:
+  - name: fct_sales
+    description: "Grain: 1 dòng đơn online / 1 dòng hoá đơn POS đã bán (không có đơn huỷ)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_number, line_no]
+    columns:
+      - name: order_date_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_date'), field: date_key}
+      - name: customer_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_customer'), field: customer_key}
+      - name: product_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_product'), field: product_key}
+      - name: order_profile_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_order_profile'), field: order_profile_key}
+      - name: store_location_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_location'), field: location_key}
+  - name: bridge_order_voucher
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_number, voucher_key]
+  - name: fct_sales_target
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [month_key, category_l1_key]

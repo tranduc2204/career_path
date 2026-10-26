@@ -1,0 +1,123 @@
+# Test của tầng staging (dựng sẵn). Grain của mỗi model được ghi trong description.
+models:
+  - name: stg_crm__customers
+    description: "Grain: 1 khách × 1 file CRM (extract_date). Lịch sử đầy đủ."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [customer_code, extract_date]
+    columns:
+      - name: customer_code
+        data_tests: [not_null]
+      - name: loyalty_tier
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Member", "Silver", "Gold"]
+
+  - name: stg_crm__customer_phones
+    description: "Grain: 1 khách × 1 loại số × 1 file CRM."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [customer_code, phone_type, extract_date]
+
+  - name: stg_shop__orders
+    description: "Grain: 1 đơn online (trạng thái HIỆN TẠI)."
+    columns:
+      - name: order_number
+        data_tests: [unique, not_null]
+      - name: customer_code
+        data_tests: [not_null]
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["placed", "paid", "cancelled", "returned"]
+
+  - name: stg_shop__order_lines
+    description: "Grain: 1 dòng đơn (order_number, line_no)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_number, line_no]
+    columns:
+      - name: order_number
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_shop__orders')
+                field: order_number
+
+  - name: stg_shop__order_vouchers
+    description: "Grain: 1 voucher trên 1 đơn."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_number, voucher_code]
+
+  - name: stg_pos__sales
+    description: "Grain: 1 dòng hoá đơn POS (receipt_no, line_no)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [receipt_no, line_no]
+
+  - name: stg_wms__shipment_events
+    description: "Grain: 1 sự kiện kho vận."
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: event_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["packed", "shipped", "delivery_failed", "delivered", "returned"]
+
+  - name: stg_wms__stock_movements
+    description: "Grain: 1 biến động tồn kho."
+    columns:
+      - name: movement_id
+        data_tests: [unique, not_null]
+
+  - name: stg_erp__products
+    description: "Grain: 1 sản phẩm (trạng thái hiện tại)."
+    columns:
+      - name: sku
+        data_tests: [unique, not_null]
+      - name: category_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_erp__categories')
+                field: category_code
+
+  - name: stg_erp__categories
+    description: "Grain: 1 danh mục."
+    columns:
+      - name: category_code
+        data_tests: [unique, not_null]
+
+  - name: stg_erp__promotions
+    description: "Grain: 1 chương trình × 1 sản phẩm."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [promo_code, sku]
+
+  - name: stg_erp__vouchers
+    columns:
+      - name: voucher_code
+        data_tests: [unique, not_null]
+
+  - name: stg_erp__locations
+    columns:
+      - name: location_code
+        data_tests: [unique, not_null]
+
+  - name: stg_erp__sales_targets
+    description: "Grain: 1 tháng × 1 danh mục cấp 1."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [target_month, category_code]
