@@ -1,0 +1,15 @@
+# ĐÁP ÁN PHẦN A (đã chạy thật trên DuckDB 1.5) — đọc phần giải thích sau dấu #
+
+A1:  10 60 60 60 110 20 20 45      # mặc định có ORDER BY = RANGE UNBOUNDED PRECEDING..CURRENT ROW. id2, id3 là peer
+                                   #   → cả hai ra 10+20+30 = 60. id4 thêm NULL (SUM bỏ qua) → vẫn 60.
+A2:  10 30 60 60 110 5 20 45       # ROWS + thứ tự unique (x, id) → lũy kế từng dòng, không gộp peer.
+A3:  110 110 110 110 110 45 45 45  # không ORDER BY → khung = cả partition.
+A4:  10 20 30 NULL 50 5 15 25      # BẪY: khung mặc định kết thúc ở CURRENT ROW → LAST_VALUE = chính dòng đó.
+A5:  50 50 50 50 50 25 25 25       # mở khung tới UNBOUNDED FOLLOWING → giá trị cuối thật sự của partition.
+A6:  10 20 30 30 50 5 15 25        # IGNORE NULLS: id4 (NULL) lấy giá trị khác NULL gần nhất phía trên = 30.
+A7:  60 60 60 50 50 20 20 25       # RANGE theo GIÁ TRỊ x: id1 (x=1) lấy x∈[0,2] = 10+20+30; id4 (x=4) lấy x∈[3,5] = NULL+50.
+A8:  1 3 3 3 2 2 2 3               # GROUPS đếm theo nhóm peer: id4 = nhóm {x=2} + nhóm {x=4} = 3 dòng.
+A9:  100 80 50 50 NULL 40 25 NULL  # khung bắt đầu SAU dòng hiện tại → dòng cuối có khung RỖNG → SUM = NULL (không phải 0).
+A10: 1 2 3 2 2 1 2 3               # COUNT(v) không đếm NULL: id4 khung {id2,id3,id4} → 2; id5 khung {id3,id4,id5} → 2.
+A11: 33.33 30 26.67 27.50 20 20 15 10  # trung bình các dòng KHÁC trong partition. id4: (10+20+30+50)/4 = 27.5.
+A12: 10 50 50 NULL 50 20 20 25     # RANGE CURRENT ROW..CURRENT ROW = "chỉ các peer của tôi" → id2, id3 = 20+30.

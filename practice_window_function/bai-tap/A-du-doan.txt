@@ -1,0 +1,48 @@
+# PHẦN A — ĐOÁN KẾT QUẢ (làm bằng giấy bút, KHÔNG chạy query trước)
+#
+# Bảng t (đã có trong lab.duckdb):
+#
+#   id | nhom | x | v
+#   ---+------+---+-----
+#    1 |  a   | 1 | 10
+#    2 |  a   | 2 | 20
+#    3 |  a   | 2 | 30      <- id 2 và 3 cùng x = 2 (peer khi ORDER BY x)
+#    4 |  a   | 4 | NULL
+#    5 |  a   | 5 | 50
+#    6 |  b   | 1 | 5
+#    7 |  b   | 1 | 15      <- id 6 và 7 cùng x = 1
+#    8 |  b   | 3 | 25
+#
+# Mỗi câu là biểu thức trong:  SELECT <biểu thức> FROM t ORDER BY id
+# Ghi 8 giá trị theo thứ tự id 1..8, cách nhau bởi dấu cách. NULL viết là NULL.
+# Số thập phân ghi 2 chữ số (vd 33.33). Chấm: python scripts/check.py A
+#
+# Trước mỗi câu, tự hỏi 3 điều: (1) frame là ROWS / RANGE / GROUPS?
+# (2) đầu mút trên và dưới ở đâu? (3) có peer không — peer có lọt vào khung không?
+#
+# A1:  sum(v) over (partition by nhom order by x)
+# A2:  sum(v) over (partition by nhom order by x, id rows between unbounded preceding and current row)
+# A3:  sum(v) over (partition by nhom)
+# A4:  last_value(v) over (partition by nhom order by x, id)
+# A5:  last_value(v) over (partition by nhom order by x, id rows between unbounded preceding and unbounded following)
+# A6:  last_value(v ignore nulls) over (partition by nhom order by x, id rows between unbounded preceding and current row)
+# A7:  sum(v) over (partition by nhom order by x range between 1 preceding and 1 following)
+# A8:  count(*) over (partition by nhom order by x groups between 1 preceding and current row)
+# A9:  sum(v) over (partition by nhom order by x, id rows between 1 following and unbounded following)
+# A10: count(v) over (partition by nhom order by x, id rows between 2 preceding and current row)
+# A11: avg(v) over (partition by nhom rows between unbounded preceding and unbounded following exclude current row)
+# A12: sum(v) over (partition by nhom order by x range between current row and current row)
+#
+# ---- điền đáp án bên dưới ----
+A1:
+A2:
+A3:
+A4:
+A5:
+A6:
+A7:
+A8:
+A9:
+A10:
+A11:
+A12:

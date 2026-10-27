@@ -1,0 +1,13 @@
+[project]
+name = "practice-window-function"
+version = "0.1.0"
+description = "Lý thuyết + bài tập tự chấm về window function, tập trung vào frame (ROWS/RANGE/GROUPS, UNBOUNDED) trên DuckDB"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Đã kiểm chứng trên 1.5.x — giữ dưới 2.0 như lab GĐ2
+    "duckdb>=1.4,<2",
+]
+
+[tool.uv]
+package = false
