@@ -9,3 +9,8 @@
 
 -- viết query bên dưới
 
+select cua_hang, ngay, doanh_thu , sum (doanh_thu) over(partition by cua_hang order by ngay asc rows between unbounded preceding and current row) luy_ke
+from main.doanh_thu_ngay 
+order by cua_hang asc, ngay asc
+
+

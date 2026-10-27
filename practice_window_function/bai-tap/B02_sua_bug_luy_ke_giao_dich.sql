@@ -12,7 +12,25 @@
 -- Sau khi sửa, ghi 1 dòng comment giải thích vì sao query cũ sai.
 -- Chấm:     python scripts/check.py B02
 
-select
+{# select
     giao_dich_id,
     sum(so_tien) over (partition by khach_hang_id order by thoi_diem) as luy_ke
+from giao_dich #}
+
+
+{# select
+    giao_dich_id,
+    sum (so_tien) over(partition by khach_hang_id order by thoi_diem , giao_dich_id  rows between unbounded preceding and current row)  as luy_ke
+from giao_dich #}
+
+
+
+select
+    giao_dich_id,
+    sum(so_tien) over (
+        partition by khach_hang_id
+        order by thoi_diem, giao_dich_id
+        rows between unbounded preceding and current row
+    ) as luy_ke
 from giao_dich
+
