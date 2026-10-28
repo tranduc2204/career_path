@@ -3,14 +3,14 @@
     config(
         materialized='incremental',
         incremental_strategy='append',
-
+        
     )
 }}
 
 with events as (
     select *
     from {{ ref('stg_events') }}
-)
+) 
 select 
     event_id, 
     user_id, 

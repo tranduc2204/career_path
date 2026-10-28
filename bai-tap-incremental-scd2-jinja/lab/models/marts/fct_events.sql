@@ -2,7 +2,8 @@
     config(
         materialized='incremental',
         incremental_strategy='delete+insert',
-        unique_key='event_id'
+        unique_key='event_id',
+        full_refresh=false,
     )
 }}
 with events as (
@@ -12,6 +13,7 @@ with events as (
 )
 select *
 from events
+
 {% if is_incremental() %}
 where _loaded_at > (select max (_loaded_at) from {{ this }} )
 {% endif %}
