@@ -10,7 +10,7 @@
     )
 }}
 
-select *
+select * 
 from {{ source('raw', 'customers')}}
 
 

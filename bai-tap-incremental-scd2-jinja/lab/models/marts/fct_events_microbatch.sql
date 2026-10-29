@@ -8,7 +8,7 @@
         batch_size='day',
         begin='2025-12-29',
         lookback=2
-    )
+    ) 
 }}
 
 select *
