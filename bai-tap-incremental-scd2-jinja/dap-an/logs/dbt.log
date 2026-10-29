@@ -33,3 +33,17 @@ Finished 'internal' successfully [2.6s]
 [0m21:30:41.027271 [debug] [MainThread]: Command `cli deps` succeeded at 21:30:41.027155 after 0.19 seconds
 [0m21:30:41.027647 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba6275fc20>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba5e4f5040>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7dba5dfc6030>]}
 [0m21:30:41.028058 [debug] [MainThread]: Flushing usage events
+[0m11:44:42.044233 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f3471a5940>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f345c77ed0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f345c77b10>]}
+
+
+============================== 11:44:42.046640 | 57bbb50d-f299-4f38-8c59-e00ac60dbd2f ==============================
+[0m11:44:42.046640 [info ] [MainThread]: Running with dbt=1.12.6
+[0m11:44:42.047016 [debug] [MainThread]: running dbt with arguments {'log_cache_events': 'False', 'cache_selected_only': 'False', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'write_json': 'True', 'static_parser': 'True', 'no_print': 'None', 'debug': 'False', 'partial_parse': 'True', 'log_format': 'default', 'printer_width': '80', 'hints_enabled': 'True', 'profiles_dir': '/home/dustin/.dbt', 'empty': 'None', 'quiet': 'False', 'log_path': '/home/dustin/Desktop/target_ae/bai-tap-incremental-scd2-jinja/dap-an/logs', 'use_colors': 'True', 'invocation_command': 'dbt show -s stg_orders --limit 3', 'indirect_selection': 'eager', 'introspect': 'True', 'warn_error': 'None', 'use_experimental_parser': 'False', 'maximum_seed_size_mib': '1', 'version_check': 'True', 'send_anonymous_usage_stats': 'True', 'fail_fast': 'False', 'target_path': 'None'}
+[0m11:44:42.048738 [error] [MainThread]: [[31mERROR[0m]: Encountered an error:
+Runtime Error
+  Could not find profile named 'lab'
+[0m11:44:42.049185 [debug] [MainThread]: Resource report: {"command_name": "show", "command_success": false, "command_wall_clock_time": 0.06046972, "process_in_blocks": "32", "process_kernel_time": 0.043127, "process_mem_max_rss": "109324", "process_out_blocks": "8", "process_user_time": 0.845497}
+[0m11:44:42.049506 [debug] [MainThread]: Command `dbt show` failed at 11:44:42.049441 after 0.06 seconds
+[0m11:44:42.049751 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f345c9de00>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f345e1b1d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f345cc4d10>]}
+[0m11:44:42.050001 [debug] [MainThread]: Flushing usage events
+[0m11:44:43.373716 [debug] [MainThread]: An error was encountered while trying to flush usage events

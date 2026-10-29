@@ -25,7 +25,9 @@ models:
                 to: ref('stg_customers')
                 field: customer_id
               config:
-                severity: warn                  # B5: ngày 2 có đơn của khách 11 chưa tồn tại (late-arriving dimension)
+                severity: error   
+                warn_if: ">0"
+                error_if: ">10"               # B5: ngày 2 có đơn của khách 11 chưa tồn tại (late-arriving dimension)
 
   - name: stg_events
     columns:
