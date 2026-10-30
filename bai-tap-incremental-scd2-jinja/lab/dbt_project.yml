@@ -19,7 +19,7 @@ vars:
   order_statuses: ["placed", "shipped", "delivered", "cancelled"]
   
   # quy tắc doanh thu
-  non_revenue_statuses: ["cancelled"]
+  non_revenue_statuses: ["cancelled","returned"]
 models:
   lab:
     staging:
