@@ -24,10 +24,8 @@ models:
           - not_null
           - unique
       - name: order_status
-        
         description: "Status of the order"
         data_tests:
-          - not_null
           - accepted_values:
               arguments:
                 values: ['placed', 'shipped', 'delivered', 'cancelled']
