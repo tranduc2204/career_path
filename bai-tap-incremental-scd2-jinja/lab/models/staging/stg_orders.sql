@@ -14,7 +14,12 @@ renamed as (
         order_id,
         customer_id,
         order_date,
-        status as  order_status,
+        {# status as  order_status, #}
+        {% if 'order_status' in source_columns %}
+            order_status,
+        {% elif 'status'  in source_columns %}
+            status as order_status,
+        {% endif %}
         {# amount_cents / 100 as amount, #}
         {{ cents_to_dollars('amount_cents') }} as  amount,
 
