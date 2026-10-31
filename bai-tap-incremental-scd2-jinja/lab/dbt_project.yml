@@ -16,7 +16,7 @@ vars:
   # Số ngày lùi lại khi lọc incremental (bài I6, J7)
   lookback_days: 3
   # Danh sách trạng thái đơn hàng (bài J3)
-  order_statuses: ["placed", "shipped", "delivered", "cancelled"]
+  order_statuses: ["placed", "shipped", "delivered", "cancelled","returned"]
   
   # quy tắc doanh thu
   non_revenue_statuses: ["cancelled","returned"]

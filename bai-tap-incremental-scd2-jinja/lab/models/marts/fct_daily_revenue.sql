@@ -10,6 +10,7 @@
 with orders as (
     select *
     from {{ ref('int_orders') }}
+    where is_revenue_order
 ),
 {% if is_incremental() %}
 list_new_orders as(

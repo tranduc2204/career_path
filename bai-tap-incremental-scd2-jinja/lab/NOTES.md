@@ -104,7 +104,23 @@ ngày 8 tính năng trả hàng lên production, nguồn xuất hiện trạng t
   | `dbt_project.yml` → `non_revenue_statuses` | thêm `returned` | `int_orders.is_revenue_order` = false → `fct_daily_revenue`, `customer_lifetime` tự loại |
 
   `customer_order_summary_dynamic` không phải sửa: macro `get_order_statuses()` đọc trạng thái từ dữ liệu nên tự có `returned`.
-  Không cần backfill: xem câu postmortem 3.
+  Không cần backfill nếu code đúng ngay từ đầu: xem câu postmortem 3.
+
+**Lỗi tự gây ra khi sửa: `int_orders` lọc thay vì gắn cờ**
+- Lúc sửa P3 mình thêm `where is_revenue_order` vào `int_orders`. Nhìn qua thì vô hại (mart cũng lọc đơn không tính doanh thu), `check.py P3` trên DB đang có vẫn PASS. Nhưng chạy `./scripts/replay.sh 8` từ đầu thì **I5 và P3 FAIL**:
+  ```
+  2025-12-29: có (6 đơn, 658.85), cần (3 đơn, 449.93)
+  ```
+- **Vì sao:** ngày 29/12 chỉ có 3 đơn 1013–1015 mang `_loaded_at` mới (2026-01-09), và chính 3 đơn đó chuyển sang `returned`. `int_orders` lọc mất chúng → `list_new_orders` của `fct_daily_revenue` không thấy dòng mới nào của 29/12 → không delete+insert ngày đó → dòng cũ (vẫn tính 3 đơn trả hàng) ở lại mãi.
+- **Sửa:** bỏ `where is_revenue_order` khỏi `int_orders`, chỉ giữ cột cờ. Lọc ở **bước tổng hợp cuối** của mart: `case when is_revenue_order` trong `select ... group by` của `fct_daily_revenue`, `where is_revenue_order` trong `customer_lifetime` (table, không có watermark nên lọc ở `where` được).
+  - ⚠️ Chuyển `where is_revenue_order` vào CTE `orders` của `fct_daily_revenue` cũng **sai y hệt**: `list_new_orders` đọc từ CTE đó nên vẫn không thấy 3 đơn `returned` (đã thử `replay.sh 8`: I5/P3 vẫn FAIL, 29/12 = 6 đơn, 658.85). Mọi bước dùng để **phát hiện ngày cần tính lại** phải đọc dữ liệu chưa lọc; chỉ bước **tính số** mới lọc.
+- **Phải full-refresh sau khi sửa code:**
+  ```bash
+  dbt build -s int_orders+ --full-refresh
+  ```
+  Sửa code xong mà chỉ `dbt build` thường thì **không đủ**: watermark `max(max_loaded_at)` của `fct_daily_revenue` đã tiến tới dữ liệu ngày 8, 3 dòng `returned` (`_loaded_at` 2026-01-09) không còn "mới" nữa → 29/12 vẫn sai. Bảng incremental không tự sửa lỗi do code cũ gây ra (giống ý ở câu 3: incremental xử lý dữ liệu mới, không xử lý code mới). `fct_daily_revenue` không đặt `full_refresh=false` nên full-refresh được; nếu là bảng có khoá bảo vệ (như `fct_events`) thì phải backfill có chủ đích theo khoảng ngày.
+  - Replay từ ngày 0 với code đã sửa thì không cần hook: mọi ngày được build bằng code đúng. Full-refresh chỉ cần cho DB đang chạy dở đã bị code lỗi nạp vào.
+- **Bài học:** tầng intermediate **gắn cờ, không lọc**. Model incremental phía sau phải thấy được cả dòng vừa *rời khỏi* tập doanh thu thì mới biết cần tính lại ngày đó. Lọc ở intermediate là giấu mất chính thay đổi mà incremental cần để kích hoạt.
 - **Phòng ngừa:** giữ `accepted_values` để trạng thái lạ luôn bị phát hiện; thoả thuận với backend báo trước khi thêm trạng thái; định nghĩa doanh thu có chủ sở hữu và tài liệu (câu 2).
 
 **Nếu quy tắc đặt ở `int_orders` (B7) thì sửa mấy chỗ? Nếu không thì mấy chỗ?**
@@ -128,6 +144,7 @@ ngày 8 tính năng trả hàng lên production, nguồn xuất hiện trạng t
    - 3 đơn đổi sang `returned` có `_loaded_at` mới → `fct_orders` (merge theo `order_id`) nhặt được trạng thái mới.
    - `fct_daily_revenue` thấy ngày 29/12 có dòng `_loaded_at` mới → delete+insert **cả ngày 29/12** → tính lại doanh thu với quy tắc mới.
    - Test đỏ chặn build ngày 8 nên watermark chưa tiến lên, lần build sau khi sửa vẫn thấy các dòng này.
+   - Điều kiện ngầm: tầng phía trên **không được lọc mất** dòng thay đổi. Nếu `int_orders` có `where is_revenue_order` thì 3 đơn `returned` biến mất trước khi tới `fct_daily_revenue` → 29/12 không được tính lại (xem mục "Lỗi tự gây ra khi sửa" ở trên).
    - `customer_lifetime` là table, mỗi lần build tính lại toàn bộ.
 
    Khi nào **không** tự tính lại:
