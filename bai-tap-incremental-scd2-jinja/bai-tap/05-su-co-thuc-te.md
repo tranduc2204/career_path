@@ -88,6 +88,7 @@ So `describe raw.orders` hôm nay với hôm qua. Để hỗ trợ cả hai tên
 ---
 
 ## P3 — Ngày 8 ⭐⭐⭐
+dbt run -s fct_daily_revenue --vars '{backfill_start: 2025-12-29, backfill_end: 2025-12-29}'
 
 **Triệu chứng**
 - 1 test đỏ ở staging. Các model phía sau bị SKIP.

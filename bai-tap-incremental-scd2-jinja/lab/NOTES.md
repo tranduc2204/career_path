@@ -152,3 +152,69 @@ ngày 8 tính năng trả hàng lên production, nguồn xuất hiện trạng t
    - **Nguồn sửa dữ liệu mà không cập nhật `_loaded_at`**: incremental không thấy (chính là P4).
 
    → Incremental chỉ xử lý **dữ liệu mới**, không xử lý **code mới**. Đổi logic thì phải tự hỏi: các dòng cũ có cần tính lại không?
+
+
+
+
+
+
+
+# tình huống P4 là 
+ngày 9 backend phát hiện thiếu phí ship $5 cho các đơn ngày 27/12, chạy `UPDATE` thẳng vào database mà không đổi `updated_at` / `_loaded_at`. Mọi watermark đều không thấy → dùng backfill có chủ đích theo `order_date`.
+
+### P4 — Ngày 9: nguồn sửa ngầm số liệu cũ
+- **Phát hiện lúc / bởi:** `dbt build` sáng ngày 9, test đối soát `audit_fct_orders_vs_full` (bài I9) đỏ, 12 dòng (6 dòng "thiếu/sai" + 6 dòng "thừa" của cùng 6 đơn). Kế toán trưởng: "doanh thu 27/12 lệch sổ sách đúng $30, backend bảo sửa rồi mà?".
+- **Ảnh hưởng:**
+  - `fct_orders`: 6 đơn 1001–1006 (ngày 2025-12-27) giữ `amount` cũ, mỗi đơn thiếu $5.
+  - `fct_daily_revenue`: 27/12 = 781.78, đúng phải là 811.78 (thiếu $30).
+  - `fct_orders_pit`: test đối soát đỏ → bị SKIP → đứng yên ở số ngày 8 (83 đơn, nguồn có 89).
+  - Không có test đối soát thì tất cả **xanh mà vẫn sai**, sai vĩnh viễn (xem câu 1).
+- **Nguyên nhân gốc:** backend sửa dữ liệu bằng `UPDATE` tay, không cập nhật `updated_at` / `_loaded_at`. Hai model incremental đọc orders đều lọc `_loaded_at > watermark` → 6 dòng bị sửa có `_loaded_at` cũ (2026-01-01) → không bao giờ được nạp lại. View/table phía trên (`stg_orders`, `int_orders`) thì đã đúng ngay.
+- **Cách sửa:**
+  1. **Code:** thêm "cửa backfill" vào cả `fct_orders` và `fct_daily_revenue`:
+     ```sql
+     where _loaded_at > (select max(...) from {{ this }})
+     {% if var('backfill_start', none) %}
+         or order_date between '{{ var("backfill_start") }}' and '{{ var("backfill_end") }}'
+     {% endif %}
+     ```
+     Dùng `or` chứ không thay watermark: vừa backfill vừa nạp dữ liệu mới, watermark không nhảy qua dòng chưa xử lý.
+  2. **Vận hành:** runbook `scripts/hooks/after_day_9.sh`:
+     ```bash
+     dbt build -s fct_orders+ fct_daily_revenue+ --vars '{backfill_start: 2025-12-27, backfill_end: 2025-12-27}'
+     ```
+  3. **Kiểm tra:** query lệch `stg_orders` vs `fct_orders` ra 0 dòng; `audit_fct_orders_vs_full` xanh lại (chạy luôn trong `dbt build` của hook); `replay.sh 9` (bản sao) 31 pass, 0 fail.
+- **Phòng ngừa:** test đối soát định kỳ cho **mọi** bảng incremental (hiện chỉ có cho `fct_orders`), full refresh định kỳ cho bảng nhỏ, yêu cầu nguồn cập nhật `updated_at` bằng trigger hoặc dùng CDC (câu 2).
+
+**Vì sao phải backfill cả 2 fct (`fct_orders` và `fct_daily_revenue`)?**
+
+Lineage của dữ liệu `raw.orders`:
+```
+raw.orders → stg_orders (view) ─┬→ int_orders (view) ─┬→ fct_daily_revenue (incremental)  ← cần backfill
+                                │                     └→ customer_lifetime (table)        đúng sẵn
+                                ├→ fct_orders (incremental) → fct_orders_pit (table)      ← cần backfill + build lại con
+                                └→ customer_order_summary (table)                         đúng sẵn
+```
+1. **Chỉ bảng incremental mới "nhớ" số cũ.** View chạy lại mỗi lần query, table tính lại toàn bộ mỗi lần build → tự đúng ngay khi nguồn đổi. Incremental giữ kết quả cũ và chỉ xử lý dòng mà watermark cho là mới → chỉ chúng cần backfill. Trong lab có đúng 2 bảng incremental đọc orders: `fct_orders` và `fct_daily_revenue` (các bảng `fct_events*` đọc events, `dim_customers_scd2_manual` đọc customers).
+2. **Hai bảng là anh em, không phải cha con.** `fct_daily_revenue` đọc `int_orders` ← `stg_orders`, **không đọc `fct_orders`**. Backfill `fct_orders` xong thì doanh thu 27/12 vẫn sai, và `fct_orders+` không bao gồm `fct_daily_revenue`. Mỗi bảng incremental có watermark riêng, trí nhớ riêng → phải bảo từng bảng tính lại.
+3. **Vì sao có dấu `+`.** Bảng con của `fct_orders` (`fct_orders_pit`) đọc nội dung của `fct_orders`. Sáng ngày 9 nó bị SKIP vì test đối soát đỏ, nên đứng ở số ngày 8. Lúc đầu mình chạy tay `dbt run -s fct_orders` (không `+`) → `fct_orders` đúng nhưng `fct_orders_pit` vẫn cũ → S6 FAIL (83/89 đơn). `fct_orders+` build lại cả con. `fct_daily_revenue+` hiện chưa có con, để sẵn cho model viết sau.
+4. **Vì sao `dbt build` chứ không `dbt run`.** `build` chạy cả test → `audit_fct_orders_vs_full` chạy lại ngay sau backfill. Backfill sai khoảng ngày thì test đỏ, `dbt build` trả lỗi, `set -e` dừng hook, `replay.sh` in ⚠️. Hook tự kiểm tra kết quả, không "nói dối".
+
+→ Quy tắc: nguồn sửa ngầm thì đi theo lineage từ bảng nguồn xuống, **liệt kê mọi bảng incremental** trên đường đi, backfill từng bảng kèm `+`.
+
+**Postmortem**
+1. *Không làm bài I9 thì ai phát hiện, sau bao lâu?*
+   Không test nào đỏ: mọi test đều kiểm tra dữ liệu **trong** bảng (unique, not_null...), không so bảng với nguồn. Người phát hiện là **kế toán** khi đối chiếu sổ sách, thường lúc khoá sổ cuối tháng, tức vài tuần sau. Lệch chỉ $30 thì có thể không ai phát hiện. Và vì `_loaded_at` không đổi, incremental **không bao giờ tự lành**: số sai nằm đó mãi.
+   Ngay cả có I9, test đối soát chỉ phủ `fct_orders`. Nếu backend chỉ sửa cột mà `fct_orders` không lấy, hoặc chỉ `fct_daily_revenue` lệch, thì vẫn không ai biết → thiếu test đối soát cho `fct_daily_revenue`.
+2. *3 cách phòng ngừa:*
+   | Cách | Làm gì | Được / mất |
+   |---|---|---|
+   | Test đối soát định kỳ | so bảng incremental với kết quả tính lại từ nguồn (I9), thêm cho `fct_daily_revenue`; bảng lớn thì chỉ so N ngày gần nhất hoặc so tổng theo ngày | phát hiện sáng hôm sau; không tự sửa |
+   | Full refresh định kỳ cho bảng nhỏ | lịch hằng tuần `dbt build --full-refresh -s fct_orders fct_daily_revenue` | tự lành tối đa sau 1 tuần; chỉ hợp bảng nhỏ, bảng có `full_refresh=false` thì không làm được |
+   | Sửa ở nguồn | trigger DB tự cập nhật `updated_at` mỗi lần `UPDATE`, hoặc dùng CDC (đọc log thay đổi của DB) | xử lý gốc rễ: mọi thay đổi đều có dấu thời gian mới → watermark thấy; cần backend hợp tác |
+   Thêm: thoả thuận với backend là sửa dữ liệu thì báo team data (lần này họ "đã sửa từ hôm qua" mà không ai biết).
+3. *Backfill theo `order_date` sai khoảng ngày thì rủi ro gì?*
+   - **Hẹp quá (sót ngày):** ngày bị sót sai mãi, không tự lành (`_loaded_at` không đổi). Hook vẫn chạy "thành công" → tưởng đã sửa xong. Chỉ test đối soát mới bắt được.
+   - **Rộng quá:** tốn chi phí, nhưng **không sai**: merge theo `order_id` ghi đè bằng giá trị hiện tại của `stg_orders`, delete+insert tính lại cả ngày từ nguồn → chạy rộng hay chạy nhiều lần đều ra cùng kết quả (idempotent). Điều kiện là dùng `or` với watermark; nếu **thay** watermark bằng khoảng ngày thì backfill có thể làm watermark nhảy qua dòng mới chưa xử lý → mất dữ liệu ở ngày khác.
+   - **Sai chiều:** khoảng ngày lấy theo lời backend ("đơn ngày 27/12"). Nếu họ sửa theo tiêu chí khác (theo khách, theo sản phẩm, theo giờ địa phương khác múi giờ của `order_date`) thì đơn bị sửa rải rác nhiều ngày, khoảng `order_date` không phủ hết → phải lấy danh sách ngày từ **kết quả đối soát**, không tin lời mô tả.
+   - **Ngày biến mất khỏi nguồn:** delete+insert chỉ xoá ngày có trong batch mới; ngày bị xoá hẳn ở nguồn thì backfill không dọn được.

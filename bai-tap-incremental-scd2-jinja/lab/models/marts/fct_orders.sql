@@ -17,4 +17,7 @@ from orders
 
 {% if is_incremental() %}
     where _loaded_at > (select max(_loaded_at) from {{ this }})
+    {% if var('backfill_start', none )%}
+        or order_date between '{{ var("backfill_start") }}' and ' {{ var("backfill_end") }} '
+    {% endif %}
 {% endif %}

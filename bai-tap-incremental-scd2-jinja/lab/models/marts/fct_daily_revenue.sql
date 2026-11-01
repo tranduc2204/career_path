@@ -10,13 +10,16 @@
 with orders as (
     select *
     from {{ ref('int_orders') }}
-    where is_revenue_order
+
 ),
 {% if is_incremental() %}
 list_new_orders as(
     select distinct order_date
     from orders
     where _loaded_at > (select max(max_loaded_at) from {{ this }})
+    {% if var('backfill_start', none )%}
+        or order_date between '{{ var("backfill_start") }}' and ' {{ var("backfill_end") }} '
+    {% endif %}
 ),
 {% endif %}
 
