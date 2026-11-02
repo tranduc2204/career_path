@@ -15,7 +15,7 @@ clean-targets: ["target", "dbt_packages"]
 vars:
   # automate_dv: thuật toán băm cho hash key và hashdiff (MD5 → chuỗi hex 32 ký tự trên DuckDB)
   hash: MD5
-
+ 
 models:
   lab:
     staging:                 # dựng sẵn: chỉ "hard rules" (đổi tên, ép kiểu, trim, chuẩn hoá chữ hoa/thường)
