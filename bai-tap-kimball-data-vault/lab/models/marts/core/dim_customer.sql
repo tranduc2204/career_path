@@ -4,12 +4,12 @@ with customer_info as (
     {{ dbt_utils.generate_surrogate_key(['city','loyalty_tier']) }} as customer_check
     from {{ ref('stg_crm__customers') }}
 ), tmp as (
-select *, lag(customer_check) over(partition by customer_code order by extract_date asc) as next_customer_check
+select *, lag(customer_check) over(partition by customer_code order by extract_date asc) as prev_customer_check
 from customer_info
 ), customer_change as (
 select *
 from tmp 
-where customer_check != next_customer_check or next_customer_check is null
+where customer_check != prev_customer_check or prev_customer_check is null
 )
 , valid_from as (
 select 
@@ -31,12 +31,16 @@ case
     end as valid_to
 
 from valid_from
+), lastest as (
+    select customer_code, full_name, email
+    from customer_info
+    qualify row_number() over(partition by customer_code order by extract_date desc) = 1
 )
 select 
-    {{ dbt_utils.generate_surrogate_key(['customer_code','valid_from']) }} as customer_key,
-    customer_code,
-    full_name,
-    email,
+    {{ dbt_utils.generate_surrogate_key(['l.customer_code','valid_from']) }} as customer_key,
+    l.customer_code,
+    l.full_name,
+    l.email,
     city,
     loyalty_tier,
     valid_from,
@@ -44,7 +48,7 @@ select
     case when valid_to = '9999-12-31'::date then true else false end as is_current,
     false as is_inferred
 from valid_to 
-
+left join lastest l on valid_to.customer_code = l.customer_code
 
 union all
 
