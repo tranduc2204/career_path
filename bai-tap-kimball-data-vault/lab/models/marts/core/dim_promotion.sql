@@ -11,12 +11,3 @@ select
     end_date
 from promotion_info
 
-union all
-
-select 
-    -1 as promotion_key,
-    -1 as promo_code,
-    'UNKNOWN' as promo_name,
-    0 as discount_pct,
-    null as start_date,
-    null as end_date

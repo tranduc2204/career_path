@@ -18,3 +18,12 @@ select
     'UNKNOWN' as location_name,
     'UNKNOWN' as location_type,
     'UNKNOWN' as city
+
+union all
+
+select 
+    -2 as location_key, 
+    -2 as location_code,
+    'KHONG_VOUCHER' as location_name,
+    'NULL' as location_type,
+    'NULL' as city

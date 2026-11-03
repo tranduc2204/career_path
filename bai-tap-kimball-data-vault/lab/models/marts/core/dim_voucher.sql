@@ -21,6 +21,7 @@ union all
 
 select 
     -2 as voucher_key, 
-    -2 as voucher_code,
+    'KHONG_VOUCHER' as voucher_code,
     'NULL' as voucher_type,
     'NULL' as voucher_name
+
