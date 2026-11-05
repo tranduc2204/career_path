@@ -66,8 +66,21 @@ select *,
 
 from result 
 )
-select *,
-gross_amount - (discount_allocated + shipping_fee_allocated) as net_amount
+select 
+    cast(strftime(cast(order_date as date), '%Y%m%d') as integer) as order_date_key  ,
+    customer_key,
+    sku as product_key,
+    order_profile_key,
+    store_location_key,
+    source_system, 
+    order_number, line_no,
+    order_ts, 
+    quantity, 
+    unit_price, 
+    gross_amount,
+    discount_allocated, 
+    shipping_fee_allocated,
+    gross_amount - (discount_allocated + shipping_fee_allocated) as net_amount
 from result_end 
 
 

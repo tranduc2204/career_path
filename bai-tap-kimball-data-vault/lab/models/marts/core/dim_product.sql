@@ -33,8 +33,8 @@ left join category_info cat on prd.category_code = cat.category_code
 union all
 
 select 
-    -1 as product_key,
-    -1 as sku,
+    '-1' as product_key,
+    '-1' as sku,
     'Không xác định' as product_name,
     null as brand,
     null as list_price,

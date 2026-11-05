@@ -1,7 +1,7 @@
 
 
----  junk dimension gom 3 thuộc tính ít giá trị.
-with group as (
+
+with tmp as (
     select distinct
         {{ dbt_utils.generate_surrogate_key(['channel', 'payment_method', 'is_gift']) }} as order_profile_key,
         channel,
@@ -11,7 +11,7 @@ with group as (
 )
 
 select *
-from group
+from tmp
 
 
 

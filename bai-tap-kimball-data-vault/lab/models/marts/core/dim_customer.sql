@@ -53,8 +53,8 @@ left join lastest l on valid_to.customer_code = l.customer_code
 union all
 
 select 
-    -1 as customer_key,
-    -1 as customer_code,
+    '-1' as customer_key,
+    '-1' as customer_code,
     'Khách vãng lai / không xác định' as full_name,
     null as email,
     'Không xác định' as city,
