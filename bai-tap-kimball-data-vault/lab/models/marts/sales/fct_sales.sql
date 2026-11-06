@@ -8,6 +8,7 @@ with order_info as (
 customer_info as (
     select * 
     from {{ ref('dim_customer') }}
+    
 ), product_info as(
     select *
     from {{ ref('dim_product') }}

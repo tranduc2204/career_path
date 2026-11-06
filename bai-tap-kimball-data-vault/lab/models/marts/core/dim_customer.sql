@@ -52,6 +52,23 @@ left join lastest l on valid_to.customer_code = l.customer_code
 
 union all
 
+select distinct 
+	customer_code as customer_key,
+     customer_code,
+    'Chưa xác định' as full_name,
+    null as email,
+    'Không xác định' as city,
+    'Không xác định' as loyalty_tier,
+    '1900-01-01'::date as valid_from,
+    '9999-12-31'::date as valid_to,
+    false as is_current,
+    true as is_inferred
+from {{ ref('int_sales__lines') }}
+where customer_code not in (select distinct customer_code from {{ ref('stg_crm__customers') }} )
+
+
+union all
+
 select 
     '-1' as customer_key,
     '-1' as customer_code,
