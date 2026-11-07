@@ -1,0 +1,33 @@
+cubes:
+  - name: order_items
+    sql_table: dev_marts.fct_order_items
+    joins:
+      - name: orders
+        sql: "{CUBE}.order_id = {orders}.order_id"
+        relationship: many_to_one
+      - name: products
+        sql: "{CUBE}.product_id = {products}.product_id"
+        relationship: many_to_one
+    dimensions:
+      - name: order_item_id
+        sql: order_item_id
+        type: string
+        primary_key: true
+      - name: order_date
+        sql: order_date
+        type: time
+    measures:
+      - name: revenue
+        title: Doanh thu (không tính đơn huỷ)
+        type: sum
+        sql: line_amount
+        filters:
+          - sql: "{orders.is_cancelled} = false"
+      - name: cogs
+        type: sum
+        sql: line_cost
+        filters:
+          - sql: "{orders.is_cancelled} = false"
+      - name: gross_profit
+        type: number
+        sql: "{revenue} - {cogs}"

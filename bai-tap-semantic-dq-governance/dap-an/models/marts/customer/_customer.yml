@@ -1,0 +1,60 @@
+models:
+  - name: dim_customers
+    description: "1 dòng / khách hàng. Chứa PII (đã che ngoài target prod_pii)."
+    latest_version: 2
+    columns:
+      - name: customer_id
+        data_type: integer
+        constraints: [{type: not_null}]
+        data_tests: [unique, not_null]
+      - name: full_name
+        data_type: varchar
+        config: {meta: {pii: true, pii_kind: name}}
+      - name: email
+        data_type: varchar
+        config: {meta: {pii: true, pii_kind: email}}
+      - name: phone
+        data_type: varchar
+        config: {meta: {pii: true, pii_kind: phone}}
+      - name: city
+        data_type: varchar
+      - name: segment
+        data_type: varchar
+      - name: customer_segment
+        data_type: varchar
+      - name: age_band
+        data_type: varchar
+      - name: birth_date
+        data_type: date
+        config: {meta: {pii: true, pii_kind: date}}
+      - name: signup_date
+        data_type: date
+    versions:
+      - v: 1
+        defined_in: dim_customers          # file gốc giữ làm v1 → lịch sử git liền mạch
+        deprecation_date: 2027-01-31
+        columns:
+          - include: all
+            exclude: [customer_segment, age_band]
+      - v: 2
+        columns:
+          - include: all
+            exclude: [phone, birth_date, segment]
+
+# Semantic model cho model CÓ VERSION: dbt-core 1.12.6 lặng lẽ bỏ qua khối `semantic_model:` kiểu mới
+# đặt trên model có `versions:` (semantic_manifest.json không có "customers", mf không báo lỗi).
+# Cách chạy được: khai báo bằng cú pháp cũ `semantic_models:` và ghim version bằng ref(..., v=2).
+semantic_models:
+  - name: customers
+    model: ref('dim_customers', v=2)
+    entities:
+      - name: customer
+        type: primary
+        expr: customer_id
+    dimensions:
+      - name: city
+        type: categorical
+      - name: customer_segment
+        type: categorical
+      - name: age_band
+        type: categorical

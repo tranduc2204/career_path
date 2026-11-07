@@ -1,0 +1,29 @@
+# Nguồn của Mây Shop. Mỗi schema là một connector (giống Fivetran/Airbyte).
+# Tuần 9 (bài Q1) bạn sẽ thêm freshness và các test Elementary vào file này.
+sources:
+  - name: shop
+    description: Website + app bán hàng. Bảng orders GHI ĐÈ trạng thái; order_items và refunds chỉ thêm (trừ khi đội app restate).
+    tables:
+      - name: orders
+      - name: order_items
+      - name: refunds
+  - name: crm
+    description: CRM. Bảng customers là trạng thái hiện tại (ghi đè).
+    tables:
+      - name: customers
+  - name: erp
+    description: Dữ liệu chủ sản phẩm. Rất ít khi đổi.
+    tables:
+      - name: products
+  - name: web
+    description: Tracking phiên truy cập (web + app). customer_id NULL khi khách chưa đăng nhập.
+    tables:
+      - name: sessions
+  - name: mkt
+    description: Chi phí quảng cáo theo ngày × nguồn (google, facebook, tiktok).
+    tables:
+      - name: ad_spend
+  - name: ingest
+    description: Nhật ký của công cụ ingest. Mỗi lần connector chạy ghi 1 dòng cho mỗi bảng, kể cả khi 0 dòng mới hoặc lỗi.
+    tables:
+      - name: sync_log

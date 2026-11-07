@@ -1,0 +1,23 @@
+[project]
+name = "bai-tap-semantic-dq-governance"
+version = "0.1.0"
+description = "Lab GĐ3: semantic layer (MetricFlow), data quality (Elementary), governance, orchestration (Dagster) trên DuckDB, giả lập nguồn theo ngày, tự chấm"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Giữ dbt Core v1, khớp lab GĐ1–GĐ2
+    "dbt-core>=1.10,<2",
+    "dbt-duckdb>=1.10,<2",
+    # DuckDB 2.0 ra 21/10/2026, dbt-duckdb chưa kiểm thử với bản này. Lab đã kiểm chứng trên 1.5.x
+    "duckdb>=1.4,<2",
+    # MetricFlow CLI (`mf`) cho dbt Core
+    "dbt-metricflow>=0.11,<1",
+    # Tuần 10: orchestration bằng Dagster (Airflow + Cosmos có project riêng trong lab/orchestration/airflow)
+    "dagster>=1.10,<2",
+    "dagster-dbt>=0.26,<1",
+    "dagster-webserver>=1.10,<2",
+    "pyyaml>=6",
+]
+
+[tool.uv]
+package = false

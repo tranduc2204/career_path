@@ -1,0 +1,27 @@
+models:
+  - name: fct_transactions
+    description: "Grain: 1 dòng / giao dịch POSTED (trạng thái hiện tại sau khi áp CDC). amount_vnd dùng tỷ giá của value_date (forward-fill)."
+    columns:
+      - name: txn_id
+        data_tests: [unique, not_null]
+      - name: account_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_core__accounts'), field: account_id}
+      - name: amount_vnd
+        data_tests: [not_null]
+  - name: fct_account_daily_balance
+    description: "Grain: 1 dòng / tài khoản / ngày (dày đặc). Semi-additive: cộng theo tài khoản được, KHÔNG cộng theo ngày."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [account_id, balance_date]}
+  - name: rpt_gl_reconciliation
+    description: "Grain: 1 dòng / ngày × sản phẩm × loại tiền của sổ cái. is_matched = lệch < 0,01."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [balance_date, product, currency]}
+  - name: mart_customer_monthly
+    description: "Grain: 1 dòng / khách / tháng có ≥ 1 tài khoản mở. avg_daily_balance_vnd = trung bình theo ngày của tổng số dư."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [customer_id, month_start]}

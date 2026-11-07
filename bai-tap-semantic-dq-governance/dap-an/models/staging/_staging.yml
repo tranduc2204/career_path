@@ -1,0 +1,60 @@
+models:
+  - name: stg_shop__orders
+    description: 1 dòng / đơn, trạng thái hiện tại (placed → shipped/cancelled → completed).
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: payment_method
+        data_tests:
+          # Q4: giá trị mới là THAY ĐỔI NGHIỆP VỤ chứ không phải lỗi → cảnh báo để cập nhật danh sách,
+          # không chặn pipeline.
+          - accepted_values:
+              arguments:
+                values: [cod, card, ewallet, bank_transfer]
+              config:
+                severity: warn
+                tags: [dq_values]
+  - name: stg_shop__order_items
+    description: 1 dòng / dòng hàng. line_amount = quantity × unit_price (giá đã trừ khuyến mãi).
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: unit_price
+        data_tests:
+          # Q6: luật nghiệp vụ biết trước (giá thấp nhất 1.000đ) → test luật, không cần anomaly
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1000
+              config:
+                severity: error
+                tags: [dq_range]
+  - name: stg_shop__refunds
+    description: 1 dòng / lần hoàn tiền.
+    columns:
+      - name: refund_id
+        data_tests: [unique, not_null]
+  - name: stg_crm__customers
+    description: 1 dòng / khách (trạng thái hiện tại). Chứa PII.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: phone
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+  - name: stg_erp__products
+    description: 1 dòng / sản phẩm.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: stg_web__sessions
+    description: 1 dòng / phiên. customer_id NULL = khách chưa đăng nhập (bình thường ~40%).
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+  - name: stg_mkt__ad_spend
+    description: 1 dòng / ngày × nguồn quảng cáo.
+    columns:
+      - name: ad_spend_id
+        data_tests: [unique, not_null]

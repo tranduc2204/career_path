@@ -1,0 +1,31 @@
+# G6: ai đang dùng dữ liệu, để biết sửa model nào thì ảnh hưởng tới đâu.
+exposures:
+  - name: daily_revenue_dashboard
+    label: Báo cáo doanh thu ngày
+    type: dashboard
+    maturity: high
+    url: https://bi.mayshop.vn/dashboards/doanh-thu-ngay
+    description: Dashboard ban giám đốc xem lúc 08:00 mỗi sáng. Dùng metric revenue, orders, aov, net_revenue.
+    owner:
+      name: Phòng Tài chính
+      email: finance@mayshop.vn
+    depends_on:
+      - ref('fct_orders')
+      - ref('fct_order_items')
+      - ref('fct_refunds')
+      - metric('revenue')
+      - metric('net_revenue')
+
+  - name: marketing_roas_report
+    label: Báo cáo ROAS theo kênh
+    type: analysis
+    maturity: medium
+    url: https://bi.mayshop.vn/dashboards/roas
+    owner:
+      name: Đội Growth Analytics
+      email: growth-data@mayshop.vn
+    depends_on:
+      - ref('fct_ad_spend')
+      - ref('fct_sessions')
+      - ref('dim_marketing_channels')
+      - metric('roas')

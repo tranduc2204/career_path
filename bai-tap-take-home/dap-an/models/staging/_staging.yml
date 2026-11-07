@@ -1,0 +1,25 @@
+models:
+  - name: stg_core__txn_cdc
+    description: "1 dòng / sự kiện CDC (đã loại sự kiện phát lại trùng lsn)."
+    columns:
+      - name: lsn
+        data_tests: [unique, not_null]
+      - name: op
+        data_tests:
+          - accepted_values:
+              arguments: {values: [r, c, u, d]}
+  - name: stg_core__accounts
+    description: "1 dòng / tài khoản."
+    columns:
+      - name: account_id
+        data_tests: [unique, not_null]
+  - name: stg_core__customers
+    description: "1 dòng / khách hàng."
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: stg_ref__fx_rates
+    description: "1 dòng / ngày làm việc × loại tiền."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [rate_date, currency]}

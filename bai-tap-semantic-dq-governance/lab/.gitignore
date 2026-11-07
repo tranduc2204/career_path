@@ -1,0 +1,12 @@
+target/
+dbt_packages/
+logs/
+*.duckdb
+*.duckdb.wal
+.user.yml
+dbt_internal_packages/
+__pycache__/
+.venv/
+.sim_cache/
+.replay/
+.airflow/

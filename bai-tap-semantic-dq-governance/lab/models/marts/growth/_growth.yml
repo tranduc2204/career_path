@@ -1,0 +1,18 @@
+models:
+  - name: fct_sessions
+    description: "Grain: 1 dòng / phiên truy cập."
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+
+  - name: fct_ad_spend
+    description: "Grain: 1 dòng / ngày × nguồn quảng cáo."
+    columns:
+      - name: ad_spend_id
+        data_tests: [unique, not_null]
+
+  - name: dim_marketing_channels
+    description: "1 dòng / utm_source."
+    columns:
+      - name: utm_source
+        data_tests: [unique, not_null]

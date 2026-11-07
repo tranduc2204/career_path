@@ -1,0 +1,14 @@
+models:
+  - name: int_transactions__current
+    description: "1 dòng / giao dịch còn tồn tại (mọi trạng thái)."
+    columns:
+      - name: txn_id
+        data_tests: [unique, not_null]
+  - name: int_fx_daily
+    description: "1 dòng / ngày lịch × loại tiền; tỷ giá forward-fill."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [rate_date, currency]}
+    columns:
+      - name: vnd_per_unit
+        data_tests: [not_null]

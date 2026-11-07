@@ -1,0 +1,16 @@
+sources:
+  - name: core
+    description: Core banking. txn_cdc là nhật ký CDC (Debezium) của bảng giao dịch, không phải bảng trạng thái.
+    tables:
+      - name: customers
+      - name: accounts
+      - name: txn_cdc
+        description: "op: r = snapshot ban đầu, c = tạo, u = sửa (after-image), d = xoá (before-image). lsn tăng dần; có thể bị phát lại (trùng lsn)."
+  - name: ref
+    tables:
+      - name: fx_rates
+        description: Tỷ giá USD→VND, chỉ ngày làm việc.
+  - name: gl
+    tables:
+      - name: daily_balances
+        description: Số dư sổ cái cuối ngày theo sản phẩm × loại tiền. Nguồn đối soát.

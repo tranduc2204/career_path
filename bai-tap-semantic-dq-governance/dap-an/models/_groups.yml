@@ -1,0 +1,14 @@
+# G1: mỗi model thuộc đúng 1 nhóm sở hữu. Nhóm được gán theo folder trong dbt_project.yml (+group).
+groups:
+  - name: commerce
+    owner:
+      name: Đội Commerce Analytics
+      email: commerce-data@mayshop.vn
+  - name: customer
+    owner:
+      name: Đội Customer Data (CRM)
+      email: customer-data@mayshop.vn
+  - name: growth
+    owner:
+      name: Đội Growth Analytics
+      email: growth-data@mayshop.vn

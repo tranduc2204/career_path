@@ -1,0 +1,82 @@
+models:
+  - name: fct_sessions
+    description: "Grain: 1 dòng / phiên truy cập."
+    semantic_model:
+      enabled: true
+      name: sessions
+    agg_time_dimension: session_date
+    columns:
+      - name: session_id
+        data_type: varchar
+        constraints: [{type: not_null}]
+        entity: {type: primary, name: session}
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_type: integer
+        entity: {type: foreign, name: customer}
+      - name: session_start
+        data_type: timestamp
+      - name: session_date
+        data_type: date
+        granularity: day
+        dimension: {type: time}
+      - name: device
+        data_type: varchar
+        dimension: {type: categorical}
+      - name: utm_source
+        data_type: varchar
+        entity: {type: foreign, name: marketing_channel}
+      - name: landing_page
+        data_type: varchar
+    metrics:
+      - name: sessions
+        label: Số phiên
+        type: simple
+        agg: count
+        expr: session_id
+
+  - name: fct_ad_spend
+    description: "Grain: 1 dòng / ngày × nguồn quảng cáo."
+    semantic_model:
+      enabled: true
+      name: ad_spend
+    agg_time_dimension: spend_date
+    columns:
+      - name: ad_spend_id
+        data_type: varchar
+        constraints: [{type: not_null}]
+        entity: {type: primary, name: ad_spend_row}
+        data_tests: [unique, not_null]
+      - name: spend_date
+        data_type: date
+        granularity: day
+        dimension: {type: time}
+      - name: utm_source
+        data_type: varchar
+        entity: {type: foreign, name: marketing_channel}
+      - name: spend
+        data_type: bigint
+    metrics:
+      - name: ad_spend
+        label: Chi phí quảng cáo
+        type: simple
+        agg: sum
+        expr: spend
+
+  - name: dim_marketing_channels
+    description: "1 dòng / utm_source."
+    semantic_model:
+      enabled: true
+      name: marketing_channels
+    columns:
+      - name: utm_source
+        data_type: varchar
+        constraints: [{type: not_null}]
+        entity: {type: primary, name: marketing_channel}
+        data_tests: [unique, not_null]
+      - name: channel_name
+        data_type: varchar
+        dimension: {type: categorical}
+      - name: channel_group
+        data_type: varchar
+        dimension: {type: categorical}

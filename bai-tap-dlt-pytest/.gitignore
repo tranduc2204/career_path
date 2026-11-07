@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.duckdb
+*.duckdb.wal
+.dlt_pipelines/
+.mutants/

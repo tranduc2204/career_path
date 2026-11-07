@@ -1,0 +1,39 @@
+name: lab
+version: "1.0.0"
+config-version: 2
+profile: lab
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+
+clean-targets: ["target", "dbt_packages"]
+
+flags:
+  # MetricFlow: time spine khai báo bằng YAML (cách mới, bắt buộc từ dbt 1.9+ để tránh cảnh báo)
+  require_yaml_configuration_for_mf_time_spines: true
+
+vars:
+  # ĐỒNG HỒ CỦA LAB — simulate.py tự cập nhật 2 dòng này mỗi lần reset/next/goto. Đừng sửa tay.
+  lab_now: "2026-12-01 06:30:00"                 # LAB_CLOCK  (macros/lab_clock.sql → current_timestamp())
+  custom_run_started_at: "2026-12-01T06:30:00"   # LAB_CLOCK  (Elementary dùng làm "bây giờ")
+
+models:
+  lab:
+    staging:                 # dựng sẵn: đổi tên, ép kiểu, làm sạch nhẹ
+      +materialized: view
+      +schema: staging
+    marts:                   # dựng sẵn: star schema nhỏ cho semantic layer
+      +materialized: table
+      +schema: marts
+    growth:                  # model của đội Growth (dùng ở bài G2)
+      +materialized: view
+      +schema: growth
+    semantic:                # time spine và các model phụ trợ của semantic layer (tuần 8)
+      +materialized: table
+      +schema: semantic
+  elementary:                # tuần 9: bảng hệ thống của Elementary
+    +schema: elementary

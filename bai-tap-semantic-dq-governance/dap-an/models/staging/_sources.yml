@@ -1,0 +1,99 @@
+# Nguồn của Mây Shop + SLA độ tươi (bài Q1) + giám sát Elementary (bài Q2, Q3, Q5).
+sources:
+  - name: shop
+    description: Website + app bán hàng.
+    config:
+      freshness:                       # SLA: dữ liệu ngày hôm trước phải có trước 06:30
+        warn_after: {count: 12, period: hour}
+        error_after: {count: 36, period: hour}
+      loaded_at_field: _loaded_at
+    tables:
+      - name: orders
+        data_tests:
+          # Q2: số đơn theo ngày đặt bất thường so với 30 ngày trước đó
+          - elementary.volume_anomalies:
+              arguments:
+                timestamp_column: order_ts
+                time_bucket: {period: day, count: 1}
+                training_period: {period: day, count: 30}
+                detection_period: {period: day, count: 2}
+                anomaly_direction: drop
+                # KHÔNG bật seasonality: day_of_week ở đây: Elementary khi đó so với cùng thứ trong
+                # training_period × 7 ngày → kéo cả các bucket 0 trước khi có dữ liệu vào trung bình.
+              config:
+                severity: warn                 # anomaly = xác suất → cảnh báo, không chặn downstream
+                tags: [dq_volume]
+      - name: order_items
+      - name: refunds
+        description: Hoàn tiền thưa (0–5 dòng/ngày) → _loaded_at đứng yên vào ngày không có hoàn tiền.
+        config:
+          # Không đo theo dữ liệu mà đo theo "connector còn chạy không": dùng nhật ký sync.
+          loaded_at_query: >
+            select max(synced_at) from {{ source('ingest', 'sync_log') }}
+            where table_name = 'shop.refunds' and status = 'success'
+
+  - name: crm
+    config:
+      freshness:
+        warn_after: {count: 12, period: hour}
+        error_after: {count: 36, period: hour}
+      loaded_at_field: _loaded_at
+    tables:
+      - name: customers
+        data_tests:
+          # Q5: phát hiện cột bị đổi tên / xoá / đổi kiểu so với lần chạy trước
+          - elementary.schema_changes:
+              config:
+                severity: warn
+                tags: [dq_schema]
+
+  - name: erp
+    description: Dữ liệu chủ sản phẩm. Rất ít khi đổi → không dùng _loaded_at để đo độ tươi.
+    tables:
+      - name: products
+        config:
+          freshness:
+            warn_after: {count: 12, period: hour}
+            error_after: {count: 36, period: hour}
+          loaded_at_query: >
+            select max(synced_at) from {{ source('ingest', 'sync_log') }}
+            where table_name = 'erp.products' and status = 'success'
+
+  - name: web
+    config:
+      freshness:
+        warn_after: {count: 12, period: hour}
+        error_after: {count: 36, period: hour}
+      loaded_at_field: _loaded_at
+    tables:
+      - name: sessions
+        columns:
+          - name: customer_id
+            description: NULL là bình thường (~40% khách chưa đăng nhập) → không dùng not_null, dùng anomaly.
+            data_tests:
+              # Q3: tỉ lệ NULL tăng vọt
+              - elementary.column_anomalies:
+                  arguments:
+                    column_anomalies: [null_percent]
+                    timestamp_column: session_start
+                    time_bucket: {period: day, count: 1}
+                    training_period: {period: day, count: 30}
+                    detection_period: {period: day, count: 2}
+                    anomaly_direction: spike
+                  config:
+                    severity: warn
+                    tags: [dq_nulls]
+
+  - name: mkt
+    config:
+      freshness:
+        warn_after: {count: 12, period: hour}
+        error_after: {count: 36, period: hour}
+      loaded_at_field: _loaded_at
+    tables:
+      - name: ad_spend
+
+  - name: ingest
+    description: Nhật ký của công cụ ingest.
+    tables:
+      - name: sync_log

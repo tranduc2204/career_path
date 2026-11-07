@@ -1,0 +1,6 @@
+models:
+  - name: dim_customers
+    description: "1 dòng / khách hàng. Chứa PII."
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]

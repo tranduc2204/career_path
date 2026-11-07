@@ -1,0 +1,24 @@
+models:
+  - name: fct_orders
+    description: "Grain: 1 dòng / đơn (mọi trạng thái). items_amount = tổng tiền hàng, chưa gồm phí ship."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+
+  - name: fct_order_items
+    description: "Grain: 1 dòng / dòng hàng."
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+
+  - name: fct_refunds
+    description: "Grain: 1 dòng / lần hoàn tiền. Thời gian = ngày hoàn tiền."
+    columns:
+      - name: refund_id
+        data_tests: [unique, not_null]
+
+  - name: dim_products
+    description: "1 dòng / sản phẩm."
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]

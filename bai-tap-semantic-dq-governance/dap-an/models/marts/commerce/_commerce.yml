@@ -1,0 +1,177 @@
+# Semantic layer (tuần 8) + contract (G3). Nhóm và access gán theo folder trong dbt_project.yml.
+models:
+  - name: fct_orders
+    description: "Grain: 1 dòng / đơn (mọi trạng thái). items_amount = tổng tiền hàng, chưa gồm phí ship."
+    semantic_model:
+      enabled: true
+      name: orders
+    agg_time_dimension: order_date
+    columns:
+      - name: order_id
+        data_type: bigint
+        constraints: [{type: not_null}]
+        entity: {type: primary, name: sales_order}
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_type: integer
+        entity: {type: foreign, name: customer}
+      - name: session_id
+        data_type: varchar
+      - name: order_ts
+        data_type: timestamp
+      - name: order_date
+        data_type: date
+        granularity: day
+        dimension: {type: time}
+      - name: channel
+        data_type: varchar
+        dimension: {type: categorical}
+      - name: utm_source
+        data_type: varchar
+        entity: {type: foreign, name: marketing_channel}
+      - name: payment_method
+        data_type: varchar
+        dimension: {type: categorical}
+      - name: status
+        data_type: varchar
+        dimension: {type: categorical}
+      - name: is_cancelled
+        data_type: boolean
+        dimension: {type: categorical}
+      - name: item_lines
+        data_type: bigint
+      - name: item_quantity
+        data_type: bigint
+      - name: items_amount
+        data_type: bigint
+      - name: items_cost
+        data_type: bigint
+      - name: shipping_fee
+        data_type: bigint
+    metrics:
+      - name: orders
+        label: Số đơn (không tính đơn huỷ)
+        type: simple
+        agg: count
+        expr: order_id
+        filter: "{{ Dimension('sales_order__is_cancelled') }} = false"
+      - name: buyers
+        label: Số người mua (distinct)
+        type: simple
+        agg: count_distinct
+        expr: customer_id
+        filter: "{{ Dimension('sales_order__is_cancelled') }} = false"
+
+  - name: fct_order_items
+    description: "Grain: 1 dòng / dòng hàng."
+    semantic_model:
+      enabled: true
+      name: order_items
+    agg_time_dimension: order_date
+    columns:
+      - name: order_item_id
+        data_type: varchar
+        constraints: [{type: not_null}]
+        entity: {type: primary, name: order_item}
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_type: bigint
+        entity: {type: foreign, name: sales_order}
+      - name: line_no
+        data_type: integer
+      - name: product_id
+        data_type: varchar
+        entity: {type: foreign, name: product}
+      - name: customer_id
+        data_type: integer
+        entity: {type: foreign, name: customer}
+      - name: utm_source
+        data_type: varchar
+        entity: {type: foreign, name: marketing_channel}
+      - name: order_date
+        data_type: date
+        granularity: day
+        dimension: {type: time}
+      - name: quantity
+        data_type: bigint
+      - name: unit_price
+        data_type: bigint
+      - name: unit_cost
+        data_type: bigint
+      - name: line_amount
+        data_type: bigint
+      - name: line_cost
+        data_type: bigint
+    metrics:
+      - name: revenue
+        label: Doanh thu (tiền hàng, không tính đơn huỷ)
+        type: simple
+        agg: sum
+        expr: line_amount
+        filter: "{{ Dimension('sales_order__is_cancelled') }} = false"
+      - name: cogs
+        label: Giá vốn
+        type: simple
+        agg: sum
+        expr: line_cost
+        filter: "{{ Dimension('sales_order__is_cancelled') }} = false"
+        hidden: true
+
+  - name: fct_refunds
+    description: "Grain: 1 dòng / lần hoàn tiền. Thời gian = ngày hoàn tiền."
+    semantic_model:
+      enabled: true
+      name: refunds
+    agg_time_dimension: refund_date
+    columns:
+      - name: refund_id
+        data_type: varchar
+        constraints: [{type: not_null}]
+        entity: {type: primary, name: refund}
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_type: bigint
+        entity: {type: foreign, name: sales_order}
+      - name: refund_ts
+        data_type: timestamp
+      - name: refund_date
+        data_type: date
+        granularity: day
+        dimension: {type: time}
+      - name: refund_amount
+        data_type: bigint
+      - name: reason
+        data_type: varchar
+        dimension: {type: categorical}
+    metrics:
+      - name: refunds
+        label: Tiền hoàn
+        type: simple
+        agg: sum
+        expr: refund_amount
+        # Đúng ra 2 dòng dưới đủ để ngày không có hoàn tiền ra 0. Nhưng dbt-core 1.12.6 bỏ qua
+        # fill_nulls_with của YAML kiểu mới (xem semantic_manifest.json) → net_revenue tự coalesce.
+        fill_nulls_with: 0
+        join_to_timespine: true
+
+  - name: dim_products
+    description: "1 dòng / sản phẩm."
+    semantic_model:
+      enabled: true
+      name: products
+    columns:
+      - name: product_id
+        data_type: varchar
+        constraints: [{type: not_null}]
+        entity: {type: primary, name: product}
+        data_tests: [unique, not_null]
+      - name: product_name
+        data_type: varchar
+      - name: category
+        data_type: varchar
+        dimension: {type: categorical}
+      - name: brand
+        data_type: varchar
+        dimension: {type: categorical}
+      - name: list_price
+        data_type: bigint

@@ -1,0 +1,36 @@
+cubes:
+  - name: products
+    sql_table: dev_marts.dim_products
+    dimensions:
+      - name: product_id
+        sql: product_id
+        type: string
+        primary_key: true
+      - name: category
+        sql: category
+        type: string
+      - name: brand
+        sql: brand
+        type: string
+
+  - name: customers
+    sql_table: dev_marts.dim_customers_v2
+    dimensions:
+      - name: customer_id
+        sql: customer_id
+        type: number
+        primary_key: true
+      - name: city
+        sql: city
+        type: string
+
+  - name: marketing_channels
+    sql_table: dev_marts.dim_marketing_channels
+    dimensions:
+      - name: utm_source
+        sql: utm_source
+        type: string
+        primary_key: true
+      - name: channel_group
+        sql: channel_group
+        type: string

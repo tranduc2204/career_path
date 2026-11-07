@@ -1,0 +1,19 @@
+# Cube Core đọc bản SAO của lab.duckdb (DuckDB chỉ cho 1 tiến trình ghi: đừng trỏ thẳng vào lab.duckdb).
+#   ./snapshot.sh            # chép lab.duckdb → data/mayshop.duckdb
+#   docker compose up        # Playground: http://localhost:4000
+services:
+  cube:
+    image: cubejs/cube:v1.6.77
+    ports:
+      - "4000:4000"      # REST / GraphQL API + Playground
+      - "15432:15432"    # SQL API (giao thức Postgres): psql -h localhost -p 15432 -U cube
+    environment:
+      CUBEJS_DEV_MODE: "true"
+      CUBEJS_DB_TYPE: duckdb
+      CUBEJS_DB_DUCKDB_DATABASE_PATH: /cube/conf/data/mayshop.duckdb
+      CUBEJS_API_SECRET: lab-secret-chi-dung-o-may-ban
+      CUBEJS_PG_SQL_PORT: "15432"
+      CUBEJS_SQL_USER: cube
+      CUBEJS_SQL_PASSWORD: cube
+    volumes:
+      - .:/cube/conf

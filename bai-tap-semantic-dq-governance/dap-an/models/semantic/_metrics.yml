@@ -1,0 +1,90 @@
+# Metric "nâng cao" dùng input từ NHIỀU semantic model: đặt ở khoá metrics: cấp cao nhất.
+metrics:
+  # ---------------------------------------------------------------- ratio
+  - name: aov
+    label: Giá trị đơn trung bình (AOV)
+    description: "revenue / orders. Ratio của 2 tổng, KHÔNG phải trung bình của các AOV theo ngày."
+    type: ratio
+    numerator: revenue
+    denominator: orders
+
+  - name: refund_rate
+    label: Tỉ lệ hoàn tiền
+    description: "refunds / revenue trong cùng kỳ (hoàn tiền tính theo ngày hoàn, doanh thu theo ngày đặt)."
+    type: ratio
+    numerator: refunds
+    denominator: revenue
+
+  - name: conversion_rate
+    label: Tỉ lệ chuyển đổi phiên → đơn
+    description: "orders / sessions trong cùng kỳ."
+    type: ratio
+    numerator: orders
+    denominator: sessions
+
+  - name: roas
+    label: ROAS
+    description: "revenue / ad_spend. Chỉ có nghĩa với nguồn trả phí; organic/email không có chi phí → NULL."
+    type: ratio
+    numerator: revenue
+    denominator: ad_spend
+
+  # ---------------------------------------------------------------- derived
+  - name: gross_profit
+    label: Lợi nhuận gộp
+    type: derived
+    expr: revenue - cogs
+    input_metrics:
+      - name: revenue
+      - name: cogs
+
+  - name: net_revenue
+    label: Doanh thu thuần
+    description: "revenue - refunds. Ngày không có hoàn tiền thì refunds = NULL → phải coalesce."
+    type: derived
+    # dbt-core 1.12.6 + YAML semantic kiểu mới: fill_nulls_with của metric bị bỏ qua khi parse
+    # (semantic_manifest.json ghi null). Vì vậy tự coalesce trong biểu thức của derived metric.
+    expr: revenue - coalesce(refunds, 0)
+    input_metrics:
+      - name: revenue
+      - name: refunds
+
+  - name: revenue_wow
+    label: Tăng trưởng doanh thu so với 7 ngày trước
+    type: derived
+    expr: (revenue - revenue_7d_ago) / revenue_7d_ago
+    input_metrics:
+      - name: revenue
+      - name: revenue
+        offset_window: 7 days
+        alias: revenue_7d_ago
+
+  # ---------------------------------------------------------------- cumulative
+  - name: revenue_mtd
+    label: Doanh thu luỹ kế tháng (MTD)
+    type: cumulative
+    input_metric: revenue
+    grain_to_date: month
+    period_agg: last
+
+  - name: buyers_7d
+    label: Người mua 7 ngày gần nhất
+    description: "Số khách DISTINCT có đơn trong 7 ngày [d-6, d]. Không bằng tổng buyers của 7 ngày."
+    type: cumulative
+    input_metric: buyers
+    window: 7 days
+    period_agg: last
+
+# M8: truy vấn đặt tên sẵn, ai cũng gọi được: mf query --saved-query daily_kpis
+saved_queries:
+  - name: daily_kpis
+    label: KPI ngày cho dashboard ban giám đốc
+    query_params:
+      metrics: [revenue, orders, aov, net_revenue]
+      group_by:
+        - "TimeDimension('metric_time', 'day')"
+    exports:                                   # chỉ chạy trên dbt Cloud / dbt platform; Core bỏ qua
+      - name: daily_kpis
+        config:
+          export_as: table
+          schema: semantic

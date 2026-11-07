@@ -1,0 +1,11 @@
+# View = "giao diện" cho người dùng BI: chỉ phơi những gì cần, đi theo đường join đã định.
+views:
+  - name: sales
+    cubes:
+      - join_path: order_items
+        includes: [revenue, gross_profit, order_date]
+      - join_path: order_items.orders
+        prefix: true
+        includes: [count, aov, channel]
+      - join_path: order_items.products
+        includes: [category]

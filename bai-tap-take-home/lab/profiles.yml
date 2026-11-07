@@ -1,0 +1,8 @@
+sen_bank:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: takehome.duckdb
+      schema: analytics
+      threads: 4

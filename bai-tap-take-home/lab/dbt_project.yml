@@ -1,0 +1,15 @@
+name: sen_bank
+version: "1.0.0"
+config-version: 2
+profile: sen_bank
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+seed-paths: ["seeds"]
+
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  as_of_date: "2027-01-31"     # ngày khoá sổ của bài: mọi bảng ngày dừng ở đây

@@ -1,0 +1,53 @@
+cubes:
+  - name: orders
+    sql_table: dev_marts.fct_orders
+    joins:
+      - name: customers
+        sql: "{CUBE}.customer_id = {customers}.customer_id"
+        relationship: many_to_one
+      - name: marketing_channels
+        sql: "{CUBE}.utm_source = {marketing_channels}.utm_source"
+        relationship: many_to_one
+    dimensions:
+      - name: order_id
+        sql: order_id
+        type: number
+        primary_key: true
+      - name: order_date
+        sql: order_date
+        type: time
+      - name: channel
+        sql: channel
+        type: string
+      - name: payment_method
+        sql: payment_method
+        type: string
+      - name: is_cancelled
+        sql: is_cancelled
+        type: boolean
+    measures:
+      - name: count
+        title: Số đơn (không tính huỷ)
+        type: count
+        filters:
+          - sql: "{CUBE}.is_cancelled = false"
+      - name: buyers
+        type: count_distinct
+        sql: customer_id
+        filters:
+          - sql: "{CUBE}.is_cancelled = false"
+      - name: items_amount
+        type: sum
+        sql: items_amount
+        filters:
+          - sql: "{CUBE}.is_cancelled = false"
+      - name: aov
+        title: AOV
+        type: number
+        sql: "{items_amount} / NULLIF({count}, 0)"
+    pre_aggregations:
+      - name: daily_by_channel
+        measures: [count, buyers, items_amount]
+        dimensions: [channel]
+        time_dimension: order_date
+        granularity: day
