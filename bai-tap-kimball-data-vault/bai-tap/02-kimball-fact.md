@@ -189,6 +189,8 @@ dbt show --inline "select order_number, current_status, order_date_key, packed_d
 
 ## K9 ⭐⭐⭐ Periodic snapshot `fct_inventory_daily`
 
+*note:* opening tồn kho đầu kỳ, ship xuất đơn, adjustment kiể kê, receipt nhập hàng từ nhà cung cấp 
+
 **Grain:** *1 dòng = 1 sản phẩm × 1 kho × 1 ngày.* **Dày đặc**: ngày không có biến động vẫn có dòng.
 
 **Yêu cầu:** `models/marts/ops/fct_inventory_daily.sql`
