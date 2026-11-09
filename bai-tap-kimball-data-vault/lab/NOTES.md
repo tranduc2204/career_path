@@ -15,31 +15,11 @@ measure:
 loại fact:
 ------------------------------------------
 
-
-stg_shop__orders
-quy trình: bán hàng (online + cửa hàng)
-gain: 1 dòng là 1 đơn
-dimension: ngày hóa đơn, khách.
-measure: số lượng, đơn giá, giảm giá 
-loại fact: transaction
-
--------------------------------------------------
-stg_shop__order_lines
-
-quy trình: bán hàng 
-gain: 1 order + 1 line no là 1 đơn giá sản phẩm trong hóa đơn chính 
-dimension: products code
-measure: price per one product
-loại fact: transaction
+quy trình nghiệp vụ 
 
 
 
-
-
-
-
-
-
+bán hàng (online + cửa hàng) 
 
 
 

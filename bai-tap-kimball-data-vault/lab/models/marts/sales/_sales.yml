@@ -1,0 +1,79 @@
+models:
+  - name: fct_sales
+    description: "Grain: 1 dòng đơn online hoặc là 1 dòng hóa đơn POS bán hàng lấy"
+    data_tests:
+        - dbt_utils.unique_combination_of_columns:
+            arguments:
+                combination_of_columns: [order_number,line_no]
+
+    columns:
+      - name: order_date_key
+        data_tests: 
+            - relationships: 
+                arguments: {to: ref('dim_date'), field: date_key}
+        data_type: integer
+        description: ""
+
+      - name: customer_key
+        data_tests:
+            - not_null
+            - relationships:
+                arguments: {to: ref('dim_customer'), field: customer_key}
+        data_type: varchar
+        description: ""
+
+      - name: product_key
+        data_tests:
+            - not_null
+            - relationships:
+                arguments: {to: ref('dim_product'), field: product_key}
+        data_type: varchar
+        description: ""
+
+      - name: order_profile_key
+        data_type: varchar
+        description: ""
+
+      - name: store_location_key
+        data_type: varchar
+        description: ""
+
+      - name: source_system
+        data_type: varchar
+        description: ""
+
+      - name: order_number
+        data_type: varchar
+        description: ""
+
+      - name: line_no
+        data_type: integer
+        description: ""
+
+      - name: order_ts
+        data_type: timestamp
+        description: ""
+
+      - name: quantity
+        data_type: integer
+        description: ""
+
+      - name: unit_price
+        data_type: bigint
+        description: ""
+
+      - name: gross_amount
+        data_type: bigint
+        description: ""
+
+      - name: discount_allocated
+        data_type: bigint
+        description: ""
+
+      - name: shipping_fee_allocated
+        data_type: bigint
+        description: ""
+
+      - name: net_amount
+        data_type: bigint
+        description: ""
