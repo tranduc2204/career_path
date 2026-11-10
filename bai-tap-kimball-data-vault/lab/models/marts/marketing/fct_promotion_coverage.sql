@@ -1,6 +1,6 @@
 
 
-select distinct 
+select  distinct
     d.date_key, dp.product_key , pro.promotion_key 
 from {{ ref('stg_erp__promotions') }} p
 join {{ ref('dim_date') }} d 
